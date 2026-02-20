@@ -1,0 +1,1 @@
+## ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://192.168.1.14:11435 ANTHROPIC_API_KEY="" claude --model qwen3-coder
