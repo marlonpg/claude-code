@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://leaf.gd" id="1_14752"]
-
-[node name="Leaf" type="Node2D"]
-script = ExtResource("1_14752")
-position = Vector2(0, 0)
