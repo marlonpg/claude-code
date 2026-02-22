@@ -1,4 +1,24 @@
 {
+  "name": "playwright-chrome-skill",
+  "version": "1.0.0",
+  "description": "A skill for accessing Chrome browser using Playwright",
+  "main": "playwright-chrome-skill.js",
+  "bin": {
+    "playwright-chrome": "./playwright-chrome-cli.js"
+  },
+  "scripts": {
+    "start": "node playwright-chrome-cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "playwright",
+    "chrome",
+    "browser",
+    "automation",
+    "skill"
+  ],
+  "author": "Claude Code",
+  "license": "MIT",
   "dependencies": {
     "playwright": "^1.58.2"
   }

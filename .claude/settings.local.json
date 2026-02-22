@@ -4,7 +4,11 @@
       "mcp__ide__executeCode",
       "mcp__ide__getDiagnostics",
       "Bash(npm install playwright)",
-      "Bash(npx playwright --help:*)"
+      "Bash(npx playwright --help:*)",
+      "Bash(npm install)",
+      "Bash(npx playwright install chromium)",
+      "Bash(npm start)",
+      "Bash(node:*)"
     ]
   }
 }
