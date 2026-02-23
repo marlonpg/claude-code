@@ -1,7 +1,7 @@
 # Offline Game Ideas Research Prompt
 
 I want you to act as a startup game product researcher and indie game designer.
-Your task is to propose exactly 5 offline-first game ideas that are easy to build, have potential for high adoption, and are realistic for a small team or solo developer.
+Your task is to propose exactly 2 offline-first game ideas that are easy to build, have potential for high adoption, and are realistic for a small team or solo developer.
 
 ## Requirements
 
@@ -11,7 +11,7 @@ Your task is to propose exactly 5 offline-first game ideas that are easy to buil
 - Prefer genres with proven retention/adoption patterns.
 - Focus on ideas with simple core loops and low art/tech complexity.
 
-## For each of the 5 ideas, provide
+## For each of the 2 ideas, provide
 
 1. Concept summary (what the game is in 2–3 sentences)
 2. Why it could have high adoption (market logic + player psychology)
