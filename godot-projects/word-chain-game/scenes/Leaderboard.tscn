@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=2 uid="uid://7e6aafe073b79f84afbf3623e32dadf440b077c7"]
+
+[ext_resource type="Script" path="res://scripts/scenes/leaderboard.gd" id="1"]
+
+[main_node type="Control" name="Leaderboard" script="res://scripts/scenes/leaderboard.gd"]
+
+[object Object]

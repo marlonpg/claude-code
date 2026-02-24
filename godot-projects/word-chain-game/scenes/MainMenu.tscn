@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=2 uid="uid://c77653dd33df57b8f80463edee07a30114279670"]
+
+[ext_resource type="Script" path="res://scripts/scenes/main_menu.gd" id="1"]
+
+[main_node type="Control" name="MainMenu" script="res://scripts/scenes/main_menu.gd"]
+
+[object Object]

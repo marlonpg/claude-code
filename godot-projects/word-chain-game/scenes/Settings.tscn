@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=2 uid="uid://7f4c3177d323ce534e7604a5cfb779a72bcd7b41"]
+
+[ext_resource type="Script" path="res://scripts/scenes/settings.gd" id="1"]
+
+[main_node type="Control" name="Settings" script="res://scripts/scenes/settings.gd"]
+
+[object Object]
