@@ -102,3 +102,7 @@ nbdist/
 .cache/
 .tmp/
 temp/
+
+# --- Godot ---
+**/.godot/
+**/.import/
