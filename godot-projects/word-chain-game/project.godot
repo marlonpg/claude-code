@@ -11,10 +11,9 @@ config_version=5
 [application]
 
 config/name="Word Chain Game"
-run/main_scene="uid://bhw528wxb37un"
+config/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.5")
 config/icon="res://icon.png"
-config/main_scene="res://scenes/MainMenu.tscn"
 
 [autoload]
 

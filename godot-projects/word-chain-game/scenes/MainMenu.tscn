@@ -2,6 +2,52 @@
 
 [ext_resource type="Script" path="res://scripts/scenes/main_menu.gd" id="1"]
 
-[main_node type="Control" name="MainMenu" script="res://scripts/scenes/main_menu.gd"]
-
-[object Object]
+[object type="Control" name="MainMenu" script="res://scripts/scenes/main_menu.gd"]
+  [sub_resource type="Button" id="1"]
+    text = "Quick Play"
+    position = Vector2(100, 200)
+    size = Vector2(200, 50)
+  [sub_resource type="Button" id="2"]
+    text = "Timed Challenge"
+    position = Vector2(100, 270)
+    size = Vector2(200, 50)
+  [sub_resource type="Button" id="3"]
+    text = "Daily Challenge"
+    position = Vector2(100, 340)
+    size = Vector2(200, 50)
+  [sub_resource type="Button" id="4"]
+    text = "Leaderboard"
+    position = Vector2(100, 410)
+    size = Vector2(200, 50)
+  [sub_resource type="Button" id="5"]
+    text = "Settings"
+    position = Vector2(100, 480)
+    size = Vector2(200, 50)
+  [sub_resource type="Label" id="6"]
+    text = "Word Chain Game"
+    position = Vector2(100, 100)
+    size = Vector2(200, 50)
+  [node name="QuickPlayButton" type="Button" parent="." resource="1"]
+    text = "Quick Play"
+    position = Vector2(100, 200)
+    size = Vector2(200, 50)
+  [node name="TimedChallengeButton" type="Button" parent="." resource="2"]
+    text = "Timed Challenge"
+    position = Vector2(100, 270)
+    size = Vector2(200, 50)
+  [node name="DailyChallengeButton" type="Button" parent="." resource="3"]
+    text = "Daily Challenge"
+    position = Vector2(100, 340)
+    size = Vector2(200, 50)
+  [node name="LeaderboardButton" type="Button" parent="." resource="4"]
+    text = "Leaderboard"
+    position = Vector2(100, 410)
+    size = Vector2(200, 50)
+  [node name="SettingsButton" type="Button" parent="." resource="5"]
+    text = "Settings"
+    position = Vector2(100, 480)
+    size = Vector2(200, 50)
+  [node name="TitleLabel" type="Label" parent="." resource="6"]
+    text = "Word Chain Game"
+    position = Vector2(100, 100)
+    size = Vector2(200, 50)

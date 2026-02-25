@@ -1,38 +1,23 @@
 # Word Chain Game
 
-A word chain puzzle game built with Godot 4.x for Android.
+A word chain game built with Godot 4.x.
 
 ## Project Structure
 
-```
-word-chain-game/
-├── scenes/
-│   ├── MainMenu.tscn
-│   ├── GamePlay.tscn
-│   ├── Leaderboard.tscn
-│   ├── Settings.tscn
-│   └── TestStructure.tscn
-├── scripts/
-│   ├── autoload/
-│   │   ├── game_state.gd
-│   │   ├── dictionary_service.gd
-│   │   ├── save_service.gd
-│   │   └── achievements.gd
-│   ├── scenes/
-│   │   ├── main_menu.gd
-│   │   ├── game_play.gd
-│   │   ├── leaderboard.gd
-│   │   └── settings.gd
-│   └── tools/
-│       └── dictionary_tool.gd
-├── assets/
-├── data/
-│   └── dictionary_en_5000.txt
-├── ui/
-├── tests/
-└── docs/
-    └── architecture.md
-```
+- `scenes/` - Scene files (MainMenu.tscn, GamePlay.tscn, etc.)
+- `scripts/` - GDScript files
+  - `autoload/` - Autoload scripts that are loaded at startup
+  - `scenes/` - Scene-specific scripts
+  - `services/` - Service scripts
+  - `tools/` - Utility tools
+- `data/` - Game data files including dictionaries
+- `assets/` - Game assets (images, sounds, etc.)
+
+## Fixes Applied
+
+1. **Fixed missing DictionaryService**: Created the missing `res://scripts/autoload/dictionary_service.gd` file that was referenced in project.godot
+2. **Fixed MainMenu.tscn parse error**: Corrected the invalid tag format in the scene file
+3. **Added dictionary files**: Created the required `res://data/dictionary_en_5000.txt` and `res://data/dictionaries/default.txt` files
 
 ## Features Implemented
 
