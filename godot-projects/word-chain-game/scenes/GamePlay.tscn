@@ -1,7 +1,0 @@
-[gd_scene load_steps=3 format=2 uid="uid://36f9d4555c680fff5024f2f036e8be69c2f4ec"]
-
-[ext_resource type="Script" path="res://scripts/scenes/game_play.gd" id="1"]
-
-[main_node type="Control" name="GamePlay" script="res://scripts/scenes/game_play.gd"]
-
-[object Object]

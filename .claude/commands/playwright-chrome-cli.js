@@ -17,7 +17,7 @@
 //   --console              Capture and print console logs
 //   --keep-open            Don't close the browser (for chained commands)
 
-const PlaywrightChromeSkill = require('./.claude/commands/playwright-chrome-skill');
+const PlaywrightChromeSkill = require('./playwright-chrome-skill');
 
 function parseArgs(argv) {
   const args = argv.slice(2);
