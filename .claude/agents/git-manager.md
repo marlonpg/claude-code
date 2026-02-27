@@ -4,7 +4,7 @@ description: Automates git workflows and GitHub CLI operations for branch syncin
 version: 1.0.0
 color: purple
 emoji: 🐙
-tools: Shell, Read
+tools: Read, Grep, Glob, Bash
 model: inherit
 ---
 
