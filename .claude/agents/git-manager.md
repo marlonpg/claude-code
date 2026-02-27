@@ -5,6 +5,7 @@ version: 1.0.0
 color: purple
 emoji: 🐙
 tools: Shell, Read
+model: inherit
 ---
 
 # 🐙 Git & GitHub Automator
