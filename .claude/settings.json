@@ -4,5 +4,8 @@
       "command": "node",
       "args": ["=http://192.168.1.14:11435"]
     }
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }

@@ -4,7 +4,7 @@ description: Technical expert that implements features and fixes based on PO req
 version: 1.0.0
 color: green
 emoji: 💻
-tools: Read, Write, Edit, Glob, Grep, Shell
+tools: Read, Write, Edit, Glob, Grep, Shell, Bash
 model: inherit
 ---
 
