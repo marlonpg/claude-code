@@ -3,6 +3,7 @@ package com.vetledger.entities;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -194,5 +195,39 @@ public class Service {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Service that)) return false;
+        return id != null ? id.equals(that.id) : that.id == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "Service{" +
+                "id=" + id +
+                ", number=" + number +
+                ", description='" + description + '\'' +
+                ", totalAmount=" + totalAmount +
+                ", requesterName='" + requesterName + '\'' +
+                ", veterinarian=" + veterinarian +
+                ", driver=" + driver +
+                ", extraCost=" + extraCost +
+                ", driverCost=" + driverCost +
+                ", vetCost=" + vetCost +
+                ", taxAmount=" + taxAmount +
+                ", netProfit=" + netProfit +
+                ", status=" + status +
+                ", serviceDate=" + serviceDate +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
     }
 }

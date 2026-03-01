@@ -2,18 +2,24 @@
 # =============================================================================
 # Ralph Loop — Agentic loop for Claude Code
 # Calls Claude Code in a loop, tracking progress until all tasks are done.
+# Now with: streaming output, log file, elapsed time, spinner
 # =============================================================================
 
-set -euo pipefail
+set -uo pipefail
 
 # --- Config ---
 export ANTHROPIC_AUTH_TOKEN=ollama
 export ANTHROPIC_BASE_URL=http://192.168.1.14:11435
 export ANTHROPIC_API_KEY=""
 MODEL="qwen3-coder"
-MAX_ITERATIONS=20
+MAX_ITERATIONS=30
+MAX_RETRIES=3
+RETRY_DELAY=5
 PROGRESS_FILE="salva-ledger/progress.txt"
 PRD_FILE="salva-ledger/PRD.md"
+LOG_DIR="salva-ledger/logs"
+TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+LOG_FILE="$LOG_DIR/ralph-loop-$TIMESTAMP.log"
 
 # --- Task List (from PRD Phase 1 & 2 MVP) ---
 TASKS=(
@@ -39,10 +45,31 @@ TASKS=(
 
 # --- Functions ---
 
+log() {
+  local msg="[$(date +%H:%M:%S)] $*"
+  echo "$msg"
+  echo "$msg" >> "$LOG_FILE"
+}
+
+spinner_start() {
+  local pid=$1
+  local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  local i=0
+  local start_time=$SECONDS
+  while kill -0 "$pid" 2>/dev/null; do
+    local elapsed=$(( SECONDS - start_time ))
+    local mins=$(( elapsed / 60 ))
+    local secs=$(( elapsed % 60 ))
+    printf "\r  [%s] Working... %dm %ds elapsed " "${spin:i++%${#spin}:1}" "$mins" "$secs"
+    sleep 0.2
+  done
+  printf "\r%80s\r" ""  # clear spinner line
+}
+
 get_completed_tasks() {
   if [[ -f "$PROGRESS_FILE" ]]; then
     local count
-    count=$(grep -c "^DONE:" "$PROGRESS_FILE" 2>/dev/null) || true
+    count=$(grep -c "^DONE:\|^SKIP:" "$PROGRESS_FILE" 2>/dev/null) || true
     echo "${count:-0}"
   else
     echo 0
@@ -95,11 +122,19 @@ EOF
 
 # --- Main Loop ---
 
+mkdir -p "$LOG_DIR"
+touch "$LOG_FILE"
+
 echo "========================================="
 echo "  Ralph Loop — Vet Transport Ledger"
 echo "========================================="
 echo "Total tasks: ${#TASKS[@]}"
 echo "Max iterations: $MAX_ITERATIONS"
+echo "Max retries per task: $MAX_RETRIES"
+echo "Log file: $LOG_FILE"
+echo ""
+echo "TIP: To watch live output in another terminal:"
+echo "  tail -f $LOG_FILE"
 echo ""
 
 # Ensure progress file exists
@@ -120,28 +155,67 @@ for ((i=1; i<=MAX_ITERATIONS; i++)); do
   completed=$(get_completed_tasks)
   total=${#TASKS[@]}
 
-  echo "-------------------------------------------"
-  echo "  Iteration $i | Task $((completed+1))/$total"
-  echo "  $task"
-  echo "-------------------------------------------"
+  log "-------------------------------------------"
+  log "  Iteration $i | Task $((completed+1))/$total"
+  log "  $task"
+  log "-------------------------------------------"
 
   prompt=$(build_prompt "$task" "$i")
+  task_start=$SECONDS
 
-  # Call Claude Code
-  claude --model "$MODEL" --dangerously-skip-permissions --print "$prompt"
+  # Call Claude Code with retry logic + streaming output
+  success=false
+  for ((retry=1; retry<=MAX_RETRIES; retry++)); do
+    log "  Attempt $retry/$MAX_RETRIES..."
+    
+    # Run claude in background, stream output to both terminal and log
+    claude --model "$MODEL" --dangerously-skip-permissions --print "$prompt" 2>&1 | tee -a "$LOG_FILE" &
+    claude_pid=$!
+    
+    # Show spinner while waiting
+    spinner_start "$claude_pid"
+    
+    # Wait for claude to finish and get exit code
+    wait "$claude_pid"
+    exit_code=$?
+    
+    task_elapsed=$(( SECONDS - task_start ))
+    task_mins=$(( task_elapsed / 60 ))
+    task_secs=$(( task_elapsed % 60 ))
+    
+    if [[ $exit_code -eq 0 ]]; then
+      success=true
+      log "  Completed in ${task_mins}m ${task_secs}s"
+      break
+    else
+      log ""
+      log "  FAILED (attempt $retry/$MAX_RETRIES) — exit code $exit_code — after ${task_mins}m ${task_secs}s"
+      if [[ $retry -lt $MAX_RETRIES ]]; then
+        log "  Retrying in ${RETRY_DELAY}s..."
+        sleep "$RETRY_DELAY"
+      fi
+    fi
+  done
+
+  if [[ "$success" == false ]]; then
+    log ""
+    log "  ERROR: All $MAX_RETRIES attempts failed for task: $task"
+    log "  Skipping and continuing to next task..."
+    echo "SKIP: $task | failed after $MAX_RETRIES retries in iteration $i" >> "$PROGRESS_FILE"
+  fi
 
   # Check if task was marked done
   new_completed=$(get_completed_tasks)
   if [[ $new_completed -le $completed ]]; then
-    echo ""
-    echo "WARNING: Task was not marked as DONE in $PROGRESS_FILE"
-    echo "Appending task completion manually..."
+    log ""
+    log "WARNING: Task was not marked as DONE in $PROGRESS_FILE"
+    log "Appending task completion manually..."
     echo "DONE: $task | completed in iteration $i" >> "$PROGRESS_FILE"
   fi
 
-  echo ""
-  echo "  Task completed. Moving to next..."
-  echo ""
+  log ""
+  log "  Task completed. Moving to next..."
+  log ""
 
   # Brief pause between iterations
   sleep 2
@@ -151,6 +225,8 @@ echo ""
 echo "==========================================="
 echo "  MAX ITERATIONS REACHED ($MAX_ITERATIONS)"
 echo "  Completed: $(get_completed_tasks)/${#TASKS[@]} tasks"
+skipped=$(grep -c "^SKIP:" "$PROGRESS_FILE" 2>/dev/null) || true
+echo "  Skipped: ${skipped:-0}"
 echo "==========================================="
 cat "$PROGRESS_FILE"
 exit 1

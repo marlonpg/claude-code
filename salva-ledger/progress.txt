@@ -1,3 +1,5 @@
 DONE: Phase1: Setup Spring Boot 3.4.x project with Java 21, PostgreSQL, Flyway, Spring Security JWT in salva-ledger/backend/ | completed in iteration 1
 DONE: Phase1: Create JPA entities for Service, Veterinarian, Driver, Expense, BusinessSettings with all fields from PRD | completed in iteration 2
 DONE: Phase1: Create Spring Data JPA repositories for all entities | completed in iteration 3
+DONE: Phase1: Implement Service CRUD REST API with pagination | completed in iteration 4
+DONE: Phase1: Implement profit/tax calculation logic server-side (netProfit = totalAmount - vetCost - driverCost - extraCost - taxAmount) | completed in iteration 1
