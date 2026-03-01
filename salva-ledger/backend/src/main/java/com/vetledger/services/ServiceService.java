@@ -4,10 +4,12 @@ import com.vetledger.entities.BusinessSettings;
 import com.vetledger.entities.Service;
 import com.vetledger.repositories.BusinessSettingsRepository;
 import com.vetledger.repositories.ServiceRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,6 +22,7 @@ public class ServiceService {
     @Autowired
     private BusinessSettingsRepository businessSettingsRepository;
 
+    @Transactional
     public Service createService(Service service) {
         // Calculate tax amount based on business settings
         calculateTaxAmount(service);
@@ -30,6 +33,7 @@ public class ServiceService {
         return serviceRepository.save(service);
     }
 
+    @Transactional
     public Service updateService(UUID id, Service serviceDetails) {
         Optional<Service> optionalService = serviceRepository.findById(id);
 
@@ -60,7 +64,7 @@ public class ServiceService {
         return null;
     }
 
-    private void calculateTaxAmount(Service service) {
+    void calculateTaxAmount(Service service) {
         // Get the current business settings
         // In a real implementation, we might have a way to get the current business settings
         // For now, we'll look for any business settings record
@@ -69,12 +73,12 @@ public class ServiceService {
         if (businessSettings.isPresent()) {
             BigDecimal taxPercentage = businessSettings.get().getTaxPercentage();
             if (taxPercentage != null && service.getTotalAmount() != null) {
-                service.setTaxAmount(service.getTotalAmount().multiply(taxPercentage).divide(BigDecimal.valueOf(100)));
+                service.setTaxAmount(service.getTotalAmount().multiply(taxPercentage).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
             }
         }
     }
 
-    private void calculateNetProfit(Service service) {
+    void calculateNetProfit(Service service) {
         // netProfit = totalAmount - vetCost - driverCost - extraCost - taxAmount
         BigDecimal netProfit = service.getTotalAmount();
 
