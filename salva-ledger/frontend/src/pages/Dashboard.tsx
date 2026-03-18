@@ -67,7 +67,7 @@ function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 mb-6">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-6">
         <Card>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-gray-500">Total Income</span>

@@ -53,10 +53,10 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 px-4 py-8">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-xl p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 px-4 py-8 no-print">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-xl p-6 sm:p-8 animate-fade-in">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 mb-4 mx-auto">
             <svg
               className="w-8 h-8 text-primary-600"
               fill="none"
@@ -94,8 +94,9 @@ function Login() {
               type="email"
               placeholder="you@example.com"
               autoComplete="email"
+              autoFocus
               {...register('email')}
-              className="w-full"
+              className="w-full touch-manipulation"
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -112,7 +113,7 @@ function Login() {
               </label>
               <a
                 href="#"
-                className="text-sm text-primary-600 hover:text-primary-500"
+                className="text-sm text-primary-600 hover:text-primary-500 touch-manipulation"
               >
                 Forgot password?
               </a>
@@ -123,7 +124,7 @@ function Login() {
               placeholder="Enter your password"
               autoComplete="current-password"
               {...register('password')}
-              className="w-full"
+              className="w-full touch-manipulation"
             />
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
@@ -179,7 +180,7 @@ function Login() {
             Don't have an account?{' '}
             <a
               href="#"
-              className="text-primary-600 hover:text-primary-500 font-medium"
+              className="text-primary-600 hover:text-primary-500 font-medium touch-manipulation"
             >
               Contact admin
             </a>

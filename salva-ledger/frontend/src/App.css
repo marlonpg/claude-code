@@ -1,1 +1,126 @@
-/* App-specific CSS - additional styles go here */
+/* Mobile-first utility classes */
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mobile-only {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  @media (min-width: 641px) {
+    .mobile-only {
+      display: none;
+    }
+
+    .desktop-only {
+      display: block;
+    }
+  }
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200;
+}
+
+/* Button mobile touch targets */
+button,
+a {
+  @apply min-h-[44px] min-w-[44px] touch-manipulation;
+}
+
+/* Input mobile-first */
+input,
+select,
+textarea {
+  @apply text-[16px] sm:text-sm touch-manipulation;
+}
+
+/* Form spacing */
+.form-group {
+  @apply space-y-4;
+}
+
+@media (max-width: 640px) {
+  .form-group {
+    gap: 1rem;
+  }
+}
+
+/* Full width on mobile */
+@media (max-width: 640px) {
+  .w-full-mobile {
+    width: 100%;
+  }
+}
+
+/* Card hover effect */
+.card-hover:hover {
+  @apply shadow-md;
+}
+
+/* Table responsive (mobile-first card view) */
+.table-container {
+  overflow-x: auto;
+}
+
+@media (max-width: 640px) {
+  .table-container {
+    display: none;
+  }
+
+  .card-list {
+    display: block;
+  }
+}
+
+@media (min-width: 641px) {
+  .card-list {
+    display: none;
+  }
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Empty state */
+.empty-state {
+  @apply text-center py-12 text-gray-500;
+}
+
+/* Badge sizes */
+.badge-sm {
+  @apply px-2 py-0.5 text-xs;
+}
+
+.badge-md {
+  @apply px-3 py-1 text-sm;
+}
+
+/* Alert styles */
+.alert {
+  @apply rounded-lg border p-4;
+}
+
+.alert-danger {
+  @apply bg-red-50 border-red-200 text-red-800;
+}
+
+.alert-success {
+  @apply bg-green-50 border-green-200 text-green-800;
+}
+
+.alert-warning {
+  @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+}
+
+.alert-info {
+  @apply bg-blue-50 border-blue-200 text-blue-800;
+}

@@ -1,7 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 
 function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
     {
@@ -85,47 +88,103 @@ function Sidebar() {
   const getActiveClass = (item: typeof navItems[0]) =>
     location.pathname === item.href ? activeClass : inactiveClass;
 
+  // Mobile menu styles
+  const mobileMenuClasses = `
+    fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+    ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+  `;
+
+  // Overlay for mobile
+  const mobileOverlay = (
+    <div
+      className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40 transition-opacity duration-300"
+      onClick={() => setIsMobileMenuOpen(false)}
+    />
+  );
+
   return (
-    <div className="w-64 border-r border-gray-200 bg-white hidden lg:block">
-      <div className="p-4">
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-900">
-            Navigation
-          </h2>
-        </div>
+    <>
+      {mobileOverlay}
 
-        <nav>
-          <ul role="list" className="space-y-1">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <div className="w-64 border-r border-gray-200 bg-white sticky top-16 h-[calc(100vh-4rem)]">
+          <div className="p-4">
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold text-gray-900">
+                Navigation
+              </h2>
+            </div>
+
+            <nav>
+              <ul role="list" className="space-y-1">
+                {navItems.map((item) => (
+                  <li key={item.href}>
+                    <button
+                      onClick={() => {
+                        navigate(item.href);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${getActiveClass(
+                        item
+                      )}`}
+                    >
+                      <span className="text-primary-600">
+                        {item.icon}
+                      </span>
+                      <span className="ml-3">{item.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <div className="px-4 py-4 border-t border-gray-200">
+              <div className="bg-primary-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-primary-900 mb-1">
+                  Need help?
+                </h3>
+                <p className="text-xs text-primary-700">
+                  Contact the administrator for support.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+        <div className="bg-white border-t border-gray-200 shadow-lg">
+          {/* Bottom Navigation Bar */}
+          <nav className="flex justify-around items-center h-16">
             {navItems.map((item) => (
-              <li key={item.href}>
-                <button
-                  onClick={() => navigate(item.href)}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${getActiveClass(
-                    item
-                  )}`}
-                >
-                  <span className="text-primary-600">
-                    {item.icon}
-                  </span>
-                  <span className="ml-3">{item.name}</span>
-                </button>
-              </li>
+              <button
+                key={item.href}
+                onClick={() => {
+                  navigate(item.href);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+                  getActiveClass(item)
+                }`}
+              >
+                <span className={`${
+                  getActiveClass(item) === activeClass ? 'text-primary-600' : 'text-gray-500'
+                }`}>
+                  {item.icon}
+                </span>
+                <span className={`text-xs mt-1 ${
+                  getActiveClass(item) === activeClass ? 'text-primary-600' : 'text-gray-500'
+                }`}>
+                  {item.name}
+                </span>
+              </button>
             ))}
-          </ul>
-        </nav>
-      </div>
-
-      <div className="px-4 py-4 border-t border-gray-200">
-        <div className="bg-primary-50 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-primary-900 mb-1">
-            Need help?
-          </h3>
-          <p className="text-xs text-primary-700">
-            Contact the administrator for support.
-          </p>
+          </nav>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

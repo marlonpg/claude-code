@@ -40,7 +40,7 @@ const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
           <input
             ref={ref}
             type="text"
-            className={`w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-colors ${
+            className={`w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-colors touch-manipulation ${
               error ? 'border-danger' : ''
             } ${className}`}
             onChange={handleChange}

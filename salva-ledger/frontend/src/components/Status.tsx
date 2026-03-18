@@ -3,9 +3,10 @@ import { ServiceStatus } from '../services/api';
 interface StatusProps {
   status: ServiceStatus | string;
   onClick?: () => void;
+  size?: 'sm' | 'md';
 }
 
-function Status({ status, onClick }: StatusProps) {
+function Status({ status, onClick, size = 'md' }: StatusProps) {
   const getStatusStyles = (s: string) => {
     switch (s) {
       case ServiceStatus.COMPLETED:
@@ -32,10 +33,15 @@ function Status({ status, onClick }: StatusProps) {
     }
   };
 
+  const sizeStyles = {
+    sm: 'px-2 py-0.5 text-xs',
+    md: 'px-3 py-1 text-sm',
+  };
+
   return (
     <span
       onClick={onClick}
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors border ${getStatusStyles(status)}`}
+      className={`inline-flex items-center rounded-full font-medium cursor-pointer transition-colors border touch-manipulation select-none ${getStatusStyles(status)} ${sizeStyles[size]}`}
     >
       {getStatusLabel(status)}
     </span>
