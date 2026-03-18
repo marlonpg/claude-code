@@ -1,47 +1,77 @@
-# Kafka Connect PostgreSQL PoC
+# Kafka Connect PostgreSQL CDC PoC
 
-This PoC demonstrates using Kafka Connect to capture data changes from PostgreSQL.
+Simple Docker-based PoC using Kafka Connect + Debezium to capture PostgreSQL changes.
 
-## Setup
-
-1. Start PostgreSQL database with replication enabled
-2. Create a publication in PostgreSQL:
-   ```sql
-   CREATE PUBLICATION pg_publication FOR TABLE your_table_name;
-   ```
-
-3. Configure replication slot:
-   ```sql
-   SELECT pg_create_logical_replication_slot('kafka-connect-replication', 'pgoutput');
-   ```
-
-## Configuration Files
-
-- `config/postgres-source.json` - Full JSON configuration
-- `config/debezium-postgres.yaml` - YAML configuration
-- `start-postgres-connector.sh` - Setup script
-
-## Run Kafka Connect
+## Quick Start
 
 ```bash
-export BOOTSTRAP_SERVERS="localhost:9092"
-export CONNECT_CONFIG="config/connector.properties"
-export CONNECT_PLUGIN_PATH="/path/to/debezium-connector-postgres/target/debezium-connector-postgres.jar"
-
-bin/connect-standalone.sh config/connector.properties connectors/postgres-connector.json
+cd poc-kafka-connect
+docker-compose up -d
 ```
 
-## Example
+## Steps After Start
 
-This PoC shows:
-- Debezium PostgreSQL connector integration
-- Logical replication slot configuration
-- Change Data Capture (CDC) from PostgreSQL
-- JSON format output to Kafka topics
+1. **Wait for services to be ready:**
+   ```bash
+   docker-compose logs -f | grep "Ready"
+   ```
 
-## Dependencies
+2. **Connect to PostgreSQL and create a publication:**
+   ```bash
+   docker exec -it pg-source-db psql -U postgres -d mydb
+   ```
 
-- Java JDK 11+
-- Kafka 2.8+
-- Debezium PostgreSQL Connector
-- PostgreSQL 10+
+3. **In PostgreSQL, create publication:**
+   ```sql
+   -- Create replication slot
+   SELECT pg_create_logical_replication_slot('kafka-connect-replication', 'pgoutput');
+
+   -- Create publication
+   CREATE PUBLICATION pg_publication FOR ALL TABLES;
+   ```
+
+4. **Create a test table and insert data:**
+   ```sql
+   CREATE TABLE users (
+     id SERIAL PRIMARY KEY,
+     name VARCHAR(100),
+     email VARCHAR(255)
+   );
+
+   INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com');
+   ```
+
+5. **Watch Kafka Connect consume changes:**
+   ```bash
+   docker-compose logs -f connectors
+   ```
+
+## Architecture
+
+```
+┌──────────┐    ┌──────┐
+│PostgreSQL│    │ Kafka │
+└────┬─────┘    └──┬───┘
+     │CDC changes  │
+     └─────────────┼────────────┐
+                   │            │
+┌────▼────┐        │            │
+│Debezium │◀───────┼◀───────────┤
+│Connector│        │ Connect    │
+└────┬────┘        └────────────┘
+     │
+     └──────────▶ Kafka Topics
+```
+
+## Services
+
+- `postgres` - PostgreSQL 15 with CDC setup
+- `kafka` - Kafka broker
+- `zookeeper` - Zookeeper
+- `connector` - Debezium PostgreSQL connector (all-in-one)
+
+## Cleanup
+
+```bash
+docker-compose down -v
+```
