@@ -5,3 +5,4 @@ DONE: Phase1: Implement Service CRUD REST API with pagination | completed in ite
 DONE: Phase1: Implement profit/tax calculation logic server-side (netProfit = totalAmount - vetCost - driverCost - extraCost - taxAmount) | completed in iteration 1
 DONE: Phase1: Implement Veterinarian and Driver CRUD REST API | completed in iteration 2
 DONE: Phase1: Implement Expense CRUD REST API with category filtering | completed in iteration 1
+DONE: Phase1: Add Flyway migration scripts for all tables and indexes (V1: core tables, V2: users/roles, V3: audit logs) | created 3 migration files with 5 tables, 17 indexes, enum types, triggers, and sample data
