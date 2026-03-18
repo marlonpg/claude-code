@@ -29,13 +29,15 @@ public class JwtTokenUtil {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
+        Claims claims = Jwts.claims().setSubject(user.getId().toString());
+        claims.put("email", user.getEmail());
+        claims.put("role", user.getRole().name());
+        claims.put("userId", user.getId().toString());
+
         return Jwts.builder()
-            .subject(user.getId().toString())
-            .claim("email", user.getEmail())
-            .claim("role", user.getRole().name())
-            .claim("userId", user.getId().toString())
+            .claims(claims)
             .issuedAt(now)
-            .expiresAt(expiryDate)
+            .expiration(expiryDate)
             .signWith(getSigningKey())
             .compact();
     }
@@ -45,20 +47,21 @@ public class JwtTokenUtil {
         // Refresh token expires in 30 days
         Date expiryDate = new Date(now.getTime() + 2592000000L);
 
+        Claims claims = Jwts.claims().setSubject(user.getId().toString());
+        claims.put("email", user.getEmail());
+        claims.put("role", user.getRole().name());
+        claims.put("userId", user.getId().toString());
+
         return Jwts.builder()
-            .subject(user.getId().toString())
-            .claim("email", user.getEmail())
-            .claim("role", user.getRole().name())
-            .claim("userId", user.getId().toString())
+            .claims(claims)
             .issuedAt(now)
-            .expiresAt(expiryDate)
+            .expiration(expiryDate)
             .signWith(getSigningKey())
             .compact();
     }
 
     public Claims getAllClaims(String token) {
-        return Jwts.parserBuilder()
-            .setSigningKey(getSigningKey())
+        return Jwts.parser()
             .build()
             .parseClaimsJws(token)
             .getBody();
@@ -66,12 +69,13 @@ public class JwtTokenUtil {
 
     public String getEmailFromToken(String token) {
         Claims claims = getAllClaims(token);
-        return claims.getSubject();
+        return claims.get("email", String.class);
     }
 
     public Role getRoleFromToken(String token) {
         Claims claims = getAllClaims(token);
-        return Role.valueOf(claims.get("role", String.class));
+        String role = claims.get("role", String.class);
+        return Role.valueOf(role);
     }
 
     public boolean isTokenValid(String token, User user) {

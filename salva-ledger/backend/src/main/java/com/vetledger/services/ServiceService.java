@@ -1,7 +1,6 @@
 package com.vetledger.services;
 
 import com.vetledger.entities.BusinessSettings;
-import com.vetledger.entities.Service;
 import com.vetledger.repositories.BusinessSettingsRepository;
 import com.vetledger.repositories.ServiceRepository;
 import jakarta.transaction.Transactional;
@@ -23,7 +22,7 @@ public class ServiceService {
     private BusinessSettingsRepository businessSettingsRepository;
 
     @Transactional
-    public Service createService(Service service) {
+    public com.vetledger.entities.Service createService(com.vetledger.entities.Service service) {
         // Calculate tax amount based on business settings
         calculateTaxAmount(service);
 
@@ -34,11 +33,11 @@ public class ServiceService {
     }
 
     @Transactional
-    public Service updateService(UUID id, Service serviceDetails) {
-        Optional<Service> optionalService = serviceRepository.findById(id);
+    public com.vetledger.entities.Service updateService(UUID id, com.vetledger.entities.Service serviceDetails) {
+        Optional<com.vetledger.entities.Service> optionalService = serviceRepository.findById(id);
 
         if (optionalService.isPresent()) {
-            Service service = optionalService.get();
+            com.vetledger.entities.Service service = optionalService.get();
 
             // Update all fields
             service.setNumber(serviceDetails.getNumber());
@@ -64,7 +63,7 @@ public class ServiceService {
         return null;
     }
 
-    void calculateTaxAmount(Service service) {
+    private void calculateTaxAmount(com.vetledger.entities.Service service) {
         // Get the current business settings
         // In a real implementation, we might have a way to get the current business settings
         // For now, we'll look for any business settings record
@@ -78,7 +77,7 @@ public class ServiceService {
         }
     }
 
-    void calculateNetProfit(Service service) {
+    private void calculateNetProfit(com.vetledger.entities.Service service) {
         // netProfit = totalAmount - vetCost - driverCost - extraCost - taxAmount
         BigDecimal netProfit = service.getTotalAmount();
 

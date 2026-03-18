@@ -76,11 +76,4 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest()
             .body(ApiResponse.error("MISSING_PARAMETER", "Missing required parameter: " + ex.getParameterName()));
     }
-
-    @ExceptionHandler(HttpException.class)
-    public ResponseEntity<ApiResponse<String>> handleHttpException(HttpException ex) {
-        logger.error("HTTP exception: {}", ex.getMessage());
-        return ResponseEntity.status(ex.getHttpStatus())
-            .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
-    }
 }
