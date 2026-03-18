@@ -68,6 +68,7 @@ services:
     container_name: kafka-connect
     depends_on:
       - kafka
+      - debezium-connector
     environment:
       CONNECT_BOOTSTRAP_SERVERS: kafka:9092
       CONNECT_GROUP_ID: postgres-connect-group
@@ -81,8 +82,6 @@ services:
       CONNECT_REST_ADVERTISED_LISTENERS: http://localhost:8083
       CONNECT_REST_LISTENERS: "http://0.0.0.0:8083"
       CONNECT_LOGGERS: org.apache.kafka.connect.errors=warn,io.debezium=warn
-    depends_on:
-      - debezium-connector
 
 volumes:
   connector_data:

@@ -1,77 +1,64 @@
 # Kafka Connect PostgreSQL CDC PoC
 
-Simple Docker-based PoC using Kafka Connect + Debezium to capture PostgreSQL changes.
-
-## Quick Start
+## Start PostgreSQL Only
 
 ```bash
 cd poc-kafka-connect
-docker-compose up -d
+docker-compose -f docker-compose.yml up -d
 ```
 
-## Steps After Start
+## Start Kafka + Debezium Connector
 
-1. **Wait for services to be ready:**
+```bash
+docker-compose -f docker-compose-kafka.yml up -d
+```
+
+## Setup
+
+1. **Wait for services to start:**
    ```bash
-   docker-compose logs -f | grep "Ready"
+   docker-compose -f docker-compose-kafka.yml logs -f
    ```
 
-2. **Connect to PostgreSQL and create a publication:**
+2. **Connect to PostgreSQL:**
    ```bash
    docker exec -it pg-source-db psql -U postgres -d mydb
    ```
 
-3. **In PostgreSQL, create publication:**
+3. **Create replication and publication:**
    ```sql
-   -- Create replication slot
    SELECT pg_create_logical_replication_slot('kafka-connect-replication', 'pgoutput');
-
-   -- Create publication
    CREATE PUBLICATION pg_publication FOR ALL TABLES;
-   ```
-
-4. **Create a test table and insert data:**
-   ```sql
-   CREATE TABLE users (
-     id SERIAL PRIMARY KEY,
-     name VARCHAR(100),
-     email VARCHAR(255)
-   );
-
+   CREATE TABLE users (id SERIAL, name VARCHAR(100), email VARCHAR(255));
    INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com');
+   \q
    ```
 
-5. **Watch Kafka Connect consume changes:**
+4. **Watch Kafka Connect consume changes:**
    ```bash
-   docker-compose logs -f connectors
+   docker-compose -f docker-compose-kafka.yml logs -f debezium-connector
    ```
 
 ## Architecture
 
 ```
-┌──────────┐    ┌──────┐
-│PostgreSQL│    │ Kafka │
-└────┬─────┘    └──┬───┘
-     │CDC changes  │
-     └─────────────┼────────────┐
-                   │            │
-┌────▼────┐        │            │
-│Debezium │◀───────┼◀───────────┤
-│Connector│        │ Connect    │
-└────┬────┘        └────────────┘
-     │
-     └──────────▶ Kafka Topics
+┌─────────┐    ┌───┐
+│Postgres │    │Kafka│
+└────┬────┘    └──┬─┘
+     │CDC          │
+     └─────────────┼────────┐
+                   │        │
+                   └───────┐│
+                           ││
+                   ┌───────┘│
+                   │Debezium│
+                   │ Connector│
+                   └─────────┘
 ```
 
-## Services
-
-- `postgres` - PostgreSQL 15 with CDC setup
-- `kafka` - Kafka broker
-- `zookeeper` - Zookeeper
-- `connector` - Debezium PostgreSQL connector (all-in-one)
-
-## Cleanup
+## Clean Up
 
 ```bash
-docker-compose down -v
+docker-compose -f docker-compose-kafka.yml down -v
+docker-compose -f docker-compose.yml down -v
 ```

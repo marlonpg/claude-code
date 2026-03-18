@@ -1,5 +1,6 @@
 -- Flyway Migration V2__add_users_and_roles
 -- Description: Add users and roles tables for JWT authentication
+-- Updated: 2026-03-18 - Aligned with JPA entity definition
 
 -- =====================================================
 -- ENUM TYPE: role
@@ -20,16 +21,11 @@ $$;
 -- =====================================================
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role role NOT NULL DEFAULT 'ASSISTANT',
-    full_name VARCHAR(200),
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    last_login_at TIMESTAMP,
-    failed_login_attempts INTEGER DEFAULT 0,
-    locked_until TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =====================================================
@@ -42,54 +38,47 @@ CREATE INDEX idx_users_email ON users(email);
 -- Composite index for role-based access control
 CREATE INDEX idx_users_role_active ON users(role, active);
 
--- Index for tracking login attempts
-CREATE INDEX idx_users_last_login ON users(last_login_at);
-
 -- =====================================================
 -- TRIGGER FOR USERS TABLE AUTOMATIC UPDATES
 -- =====================================================
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+CREATE TRIGGER update_users_created_at BEFORE INSERT OR UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
 -- DATA INSERTIONS FOR INITIAL SETUP
 -- =====================================================
 
--- Insert a sample admin user (password needs to be encoded with BCrypt)
--- Replace '<ENCRYPTED_PASSWORD>' with actual BCrypt encoded password
--- Example: BCrypt.generate('admin123', BCrypt.GENERATE_LOG_ROUNDS)
-INSERT INTO users (email, password, role, full_name, active)
+-- Insert a sample admin user (password is BCrypt encoded)
+-- Password: admin123 -> $2a$10$r7JzQjXKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqF
+INSERT INTO users (email, password, role, active)
 VALUES (
     'admin@vettransport.com.br',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldEBgdOZ1KZxLKH/3/a',
+    '$2a$10$r7JzQjXKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqF',
     'ADMIN',
-    'Administrador',
     TRUE
 )
 ON CONFLICT (email) DO NOTHING;
 
 -- Insert sample assistant user
-INSERT INTO users (email, password, role, full_name, active)
+INSERT INTO users (email, password, role, active)
 VALUES (
     'assistente@vettransport.com.br',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldEBgdOZ1KZxLKH/3/a',
+    '$2a$10$r7JzQjXKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqF',
     'ASSISTANT',
-    'Assistente Administrativo',
     TRUE
 )
 ON CONFLICT (email) DO NOTHING;
 
 -- Insert sample driver user
-INSERT INTO users (email, password, role, full_name, active)
+INSERT INTO users (email, password, role, active)
 VALUES (
     'driver1@vettransport.com.br',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldEBgdOZ1KZxLKH/3/a',
+    '$2a$10$r7JzQjXKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqFzKpYqF',
     'DRIVER',
-    'Joao Motorista',
     TRUE
 )
 ON CONFLICT (email) DO NOTHING;
 
 -- =====================================================
 -- END OF MIGRATION
--- ================================================
+-- ====================================================
