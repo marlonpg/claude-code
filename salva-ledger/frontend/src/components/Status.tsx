@@ -10,9 +10,9 @@ function Status({ status, onClick, size = 'md' }: StatusProps) {
   const getStatusStyles = (s: string) => {
     switch (s) {
       case ServiceStatus.COMPLETED:
-        return 'bg-success-100 text-success-800 hover:bg-success-200 border-success-200';
+        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200';
       case ServiceStatus.PENDING:
-        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200';
+        return 'bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200';
       case ServiceStatus.CANCELLED:
         return 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-gray-200';
       default:
@@ -23,11 +23,11 @@ function Status({ status, onClick, size = 'md' }: StatusProps) {
   const getStatusLabel = (s: string) => {
     switch (s) {
       case ServiceStatus.COMPLETED:
-        return 'Completed';
+        return '✓ Completed';
       case ServiceStatus.PENDING:
-        return 'Pending';
+        return '⏳ Pending';
       case ServiceStatus.CANCELLED:
-        return 'Cancelled';
+        return '✕ Cancelled';
       default:
         return s;
     }

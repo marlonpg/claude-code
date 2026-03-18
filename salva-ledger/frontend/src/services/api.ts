@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, useTransition } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useTransition, useInfinite } from '@tanstack/react-query';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
@@ -58,8 +58,22 @@ export function useLogin() {
 
 // Services API
 export const servicesApi = {
-  getAll: ({ page = 0, size = 10 }?: { page?: number; size?: number }) =>
-    axiosInstance.get(`/services?page=${page}&size=${size}`),
+  getAll: ({
+    page = 0,
+    size = 10,
+    search,
+    status,
+  }?: {
+    page?: number;
+    size?: number;
+    search?: string;
+    status?: string;
+  }) =>
+    axiosInstance.get(`/services?page=${page}&size=${size}${search ? `&search=${encodeURIComponent(search)}` : ''}${status ? `&status=${status}` : ''}`),
+
+  // Infinite scroll endpoint - fetch next page without search/status filters
+  getInfinite: (lastPage: number) =>
+    axiosInstance.get(`/services?page=${lastPage}&size=10`),
 
   getById: (id: string) => axiosInstance.get(`/services/${id}`),
 
@@ -285,6 +299,43 @@ export function useDrivers() {
     queryKey: ['drivers'],
     queryFn: () => driversApi.getAll(),
   });
+}
+
+// Infinite scroll hook wrapper
+export function useServicesInfinite({
+  size = 10,
+  search,
+  status,
+}: { size?: number; search?: string; status?: string } = {}) {
+  const fetchNextPage = async () => {
+    const nextPage = (fetchNextPage.currentPage || 0) + 1;
+
+    return servicesApi.getInfinite(nextPage).then((page) => {
+      fetchNextPage.currentPage = nextPage;
+      return page;
+    });
+  };
+
+  // Store current page count using a side effect
+  let currentPage = 0;
+
+  return useInfinite({
+    queryKey: ['services', 'infinite', search, status],
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => {
+      const last = lastPage.last || 0;
+      const hasMore = last < (lastPage.totalElements || 0) - size;
+      return hasMore ? last + 1 : undefined;
+    },
+    getPreviousPageParam: (firstPage) => 0,
+  });
+}
+
+// Type for page data
+export interface PageService {
+  content: ServiceDTO[];
+  last?: number;
+  totalElements?: number;
 }
 
 export function useLogin() {

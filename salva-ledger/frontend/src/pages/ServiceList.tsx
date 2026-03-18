@@ -1,22 +1,81 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { useInfinite } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { servicesApi, ServiceStatus } from '../services/api';
 import Layout from '../components/Layout';
-import Card from '../components/Card';
+import ServiceCard from '../components/ServiceCard';
 import Button from '../components/Button';
-import Status from '../components/Status';
+import FloatingActionButton from '../components/FloatingActionButton';
+import { PageService } from '../services/api';
 
 function ServiceList() {
   const navigate = useNavigate();
-  const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
-  const { data: servicesData, isLoading: servicesLoading, error: servicesError } = useQuery({
-    queryKey: ['services', page, search, statusFilter],
-    queryFn: () => servicesApi.getAll({ page, size: 10, search, status: statusFilter }),
+  // Use useInfinite hook for infinite scroll
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useInfinite({
+    queryKey: ['services', 'infinite', search, statusFilter],
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => {
+      const last = lastPage.last || 0;
+      // Load more if there are more services to fetch
+      return last < (lastPage.totalElements || 0) - 10 ? last + 1 : undefined;
+    },
+    getPreviousPageParam: (firstPage, pages) => 0,
   });
+
+  // Combine all pages into a single array
+  const allPages = data || [];
+  const allServices = allPages.flatMap((page) => page.content || []);
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(allServices.length / 10);
+  const currentPage = Math.min(Math.floor(allServices.length / 10) + 1, totalPages);
+
+  // Check if we're near the bottom
+  const lastPage = allPages[allPages.length - 1] || {};
+  const last = lastPage.last || 0;
+  const hasMore = last < (lastPage.totalElements || 0) - 10;
+
+  // Load more on scroll
+  const handleScroll = useCallback(() => {
+    const target = document.getElementById('services-list-container');
+    if (target) {
+      const { scrollTop, scrollHeight, clientHeight } = target;
+      if (scrollHeight - scrollTop - clientHeight < 100 && hasMore && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    }
+  }, [hasMore, isFetchingNextPage, fetchNextPage]);
+
+  // Also provide manual load more function
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasMore, isFetchingNextPage, fetchNextPage]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    // Reset when search changes
+    const newData = [...data];
+    newData[0] = { content: [], meta: data[0]?.meta };
+  };
+
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value || undefined);
+    // Reset when filter changes
+    const newData = [...data];
+    newData[0] = { content: [], meta: data[0]?.meta };
+  };
 
   if (isLoading) {
     return (
@@ -29,11 +88,11 @@ function ServiceList() {
     );
   }
 
-  if (servicesError) {
+  if (error) {
     return (
       <Layout>
         <div className="text-center py-12">
-          <p className="text-red-600">Failed to load services.</p>
+          <p className="text-red-600">Failed to load services. Please try again.</p>
         </div>
       </Layout>
     );
@@ -49,7 +108,7 @@ function ServiceList() {
               Manage and view all transport services
             </p>
           </div>
-          <Button onClick={() => navigate('/services/new')}>
+          <Button onClick={() => navigate('/services/new')} variant="secondary">
             <svg
               className="h-5 w-5 mr-2"
               fill="none"
@@ -68,23 +127,24 @@ function ServiceList() {
         </div>
       </div>
 
-      <Card className="overflow-auto no-scrollbar" style={{ maxHeight: 'calc(100vh - 20rem)' }}>
+      <div id="services-list-container" onScroll={handleScroll}>
+        {/* Filters */}
         <div className="mb-4 flex flex-wrap gap-3">
           {/* Search Input */}
           <div className="flex-1 min-w-0">
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearch}
               placeholder="Search by description..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm touch-manipulation"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm touch-manipulation bg-white"
             />
           </div>
 
           {/* Status Filter */}
           <select
             value={statusFilter || ''}
-            onChange={(e) => setStatusFilter(e.target.value || undefined)}
+            onChange={handleStatusFilterChange}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm touch-manipulation bg-white"
           >
             <option value="">All Statuses</option>
@@ -94,85 +154,78 @@ function ServiceList() {
           </select>
         </div>
 
-        {/* Mobile-first card list instead of table */}
+        {/* Mobile-first card list */}
         <div className="space-y-3">
-          {servicesData?.content?.map((service) => (
-            <div
+          {allServices.map((service) => (
+            <ServiceCard
               key={service.id}
+              service={service}
               onClick={() => navigate(`/services/${service.id}`)}
-              className="group bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer touch-manipulation animate-fade-in"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="text-base font-semibold text-gray-900 truncate">
-                    {service.description}
-                  </div>
-                  {service.requesterName && (
-                    <div className="text-sm text-gray-500">{service.requesterName}</div>
-                  )}
-                  <div className="text-sm text-gray-400 mt-1">
-                    {new Date(service.serviceDate).toLocaleDateString()}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
-                  <div className="flex flex-col items-end">
-                    <div className="text-lg font-bold text-gray-900">
-                      ${service.totalAmount?.toFixed(2) || '0.00'}
-                    </div>
-                    <div className="text-xs text-gray-500">total</div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Status status={service.status} size="sm" />
-                    <div className={`text-sm font-semibold ${
-                      service.netProfit >= 0 ? 'text-success' : 'text-danger'
-                    }`}>
-                      ${service.netProfit?.toFixed(2) || '0.00'}
-                    </div>
-                  </div>
-
-                  <div className="sm:hidden text-xs text-gray-400">
-                    tap to view
-                  </div>
-                </div>
-              </div>
-            </div>
+            />
           ))}
         </div>
 
-        {servicesData?.content?.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            No services found
+        {/* Infinite scroll loading indicator */}
+        {isFetchingNextPage && (
+          <div className="text-center py-4">
+            <div className="inline-flex items-center gap-2 text-sm text-gray-500">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-500 border-t-transparent"></div>
+              Loading more services...
+            </div>
           </div>
         )}
 
-        {servicesData?.pageable?.pageSize > 0 && (
-          <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 sm:px-6">
-            <div className="text-sm text-gray-700">
-              Page {servicesData.pageNumber + 1} of {servicesData.totalPages || 1}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={servicesData.pageNumber === 0}
-                onClick={() => setPage(servicesData.pageNumber - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={servicesData.pageNumber === servicesData.totalPages - 1}
-                onClick={() => setPage(servicesData.pageNumber + 1)}
-              >
-                Next
-              </Button>
-            </div>
+        {/* Load more button (optional fallback) */}
+        {hasMore && !isFetchingNextPage && (
+          <div className="text-center py-4">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleLoadMore}
+            >
+              Load More Services
+            </Button>
           </div>
         )}
-      </Card>
+
+        {/* Empty state */}
+        {allServices.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            <div className="text-4xl mb-3">📋</div>
+            <p className="text-lg font-medium">No services found</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Try adjusting your search or filters
+            </p>
+            {(search || statusFilter) && (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="mt-4"
+                onClick={() => {
+                  setSearch('');
+                  setStatusFilter(undefined);
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Floating action button for mobile */}
+      <FloatingActionButton onClick={() => navigate('/services/new')} />
+
+      {/* Show page indicator on desktop only */}
+      <div className="hidden sm:block mt-4 text-center text-sm text-gray-500">
+        Showing services {allServices.length}
+        {hasMore && (
+          <>
+            {' '}of {lastPage.totalElements || allServices.length}
+            {' '}({Math.ceil((allServices.length - 1) / 10) + 1} pages)
+          </>
+        )}
+      </div>
     </Layout>
   );
 }

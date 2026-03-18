@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,11 +27,13 @@ public class ServiceController {
     private ServiceService serviceService;
 
     /**
-     * Get all services with pagination
+     * Get all services with pagination and optional filters (search, status)
      * @param page Page number (0-based)
      * @param size Page size
      * @param sortBy Sort field
      * @param sortDir Sort direction (ASC or DESC)
+     * @param search Search term for description field
+     * @param status Filter by status (PENDING, COMPLETED, CANCELLED)
      * @return Page of services
      */
     @GetMapping
@@ -40,12 +41,33 @@ public class ServiceController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDir) {
+            @RequestParam(defaultValue = "DESC") String sortDir,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status) {
 
-        Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // Build query based on filter parameters
+        Page<Service> services;
 
-        Page<Service> services = serviceRepository.findAll(pageable);
+        if (search != null && !search.isBlank() && status != null) {
+            // Both search and status provided
+            Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+            services = serviceRepository.findBySearchAndStatus(search, status, pageable);
+        } else if (search != null && !search.isBlank()) {
+            // Only search provided
+            Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+            services = serviceRepository.findBySearch(search, pageable);
+        } else if (status != null) {
+            // Only status provided
+            Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+            services = serviceRepository.findByStatus(status, pageable);
+        } else {
+            // No filters - return all services
+            services = serviceRepository.findAll(Sort.by(sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
+        }
+
         return ResponseEntity.ok(services);
     }
 
