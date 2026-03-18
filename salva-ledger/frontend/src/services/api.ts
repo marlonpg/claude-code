@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useTransition } from '@tanstack/react-query';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
@@ -28,10 +28,33 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
       window.location.href = '/';
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }
 );
+
+// Auth mutation hooks
+export function useLogin() {
+  const [isPending, startTransition] = useTransition();
+
+  const mutation = useMutation<LoginResponse, Error, LoginRequest>({
+    mutationFn: authApi.login,
+    onSuccess: (data) => {
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_user', JSON.stringify({
+        id: data.userId,
+        email: data.email,
+        role: data.role,
+      }));
+    },
+    onError: (error) => {
+      // Don't clear storage on rememberMe - let client handle it
+    },
+  });
+
+  return mutation;
+}
 
 // Services API
 export const servicesApi = {

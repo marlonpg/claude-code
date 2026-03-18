@@ -1,64 +1,57 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { useLogin } from '../services/api';
-import { LoginRequest } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-
 function Login() {
   const navigate = useNavigate();
-  const loginMutation = useLogin();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading, isAuthenticated, userInfo } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  // Redirect if already authenticated
+  if (isAuthenticated && !isLoading) {
+    navigate('/dashboard');
+  }
 
-  const onSubmit = async (data: LoginFormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const email = formData.get('email')?.toString().trim();
+    const password = formData.get('password')?.toString();
+
+    if (!email || !password) {
+      setError('All fields are required');
+      return;
+    }
+
+    if (isLoading) return;
+
     try {
-      setIsLoading(true);
       setError(null);
+      await login({ email, password, rememberMe });
 
-      // Use remember me if checkbox is checked
-      data.rememberMe = true;
+      // Optionally fetch user info after successful login (optional refresh of user data)
+      // await fetchUserInfo();
 
-      await loginMutation.mutateAsync(data);
-      // Clear error state
-      if (loginMutation.data) {
-        setError(null);
-      }
       navigate('/dashboard');
     } catch (err) {
       setError(
-        loginMutation.error?.message || 'Failed to sign in. Please try again.'
+        err instanceof Error ? err.message : 'Invalid email or password. Please try again.'
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 px-4 py-8 no-print">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-xl p-6 sm:p-8 animate-fade-in">
-        <div className="text-center mb-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 px-4 py-8 sm:py-12 no-print">
+      <Card className="w-full max-w-md p-6 sm:p-8 animate-fade-in bg-white">
+        <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 mb-4 mx-auto">
             <svg
-              className="w-8 h-8 text-primary-600"
+              className="w-8 h-8 sm:w-10 sm:h-10 text-primary-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -71,8 +64,8 @@ function Login() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Vet Transport</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Vet Transport</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-2">Sign in to your account</p>
         </div>
 
         {error && (
@@ -81,7 +74,7 @@ function Login() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           <div>
             <label
               htmlFor="email"
@@ -91,16 +84,14 @@ function Login() {
             </label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="you@example.com"
               autoComplete="email"
               autoFocus
-              {...register('email')}
-              className="w-full touch-manipulation"
+              required
+              className="w-full touch-manipulation h-12 text-base"
             />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-            )}
           </div>
 
           <div>
@@ -111,42 +102,49 @@ function Login() {
               >
                 Password
               </label>
-              <a
-                href="#"
-                className="text-sm text-primary-600 hover:text-primary-500 touch-manipulation"
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-sm text-primary-600 hover:text-primary-500 touch-manipulation focus:outline-none"
               >
-                Forgot password?
-              </a>
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
             </div>
             <Input
               id="password"
-              type="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Enter your password"
               autoComplete="current-password"
-              {...register('password')}
-              className="w-full touch-manipulation"
+              required
+              {...(showPassword && { className: "w-full touch-manipulation h-12 text-base" })}
             />
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-            )}
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer touch-manipulation">
               <input
                 type="checkbox"
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="w-5 h-5 sm:w-4 sm:h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
               />
               <span className="ml-2 text-sm text-gray-600">Remember me</span>
             </label>
+            <a
+              href="#"
+              className="text-sm text-primary-600 hover:text-primary-500 touch-manipulation"
+            >
+              Forgot password?
+            </a>
           </div>
 
           <Button
             type="submit"
-            className="w-full"
-            disabled={isLoading || loginMutation.isPending}
+            className="w-full h-12 text-base"
+            disabled={isLoading}
           >
-            {(isLoading || loginMutation.isPending) ? (
+            {isLoading ? (
               <span className="flex items-center justify-center">
                 <svg
                   className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -177,7 +175,7 @@ function Login() {
 
         <div className="mt-6 pt-6 border-t border-gray-200 text-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <a
               href="#"
               className="text-primary-600 hover:text-primary-500 font-medium touch-manipulation"
@@ -186,7 +184,7 @@ function Login() {
             </a>
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

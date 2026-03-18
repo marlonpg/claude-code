@@ -13,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -116,10 +117,29 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<User>> getLoggedInUser() {
-        // Get the current authenticated user from security context
-        // This will be handled by SecurityContextHolder in the actual implementation
-        // For now, returning a generic response
-        return ResponseEntity.ok(ApiResponse.success("User authenticated"));
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+                return ResponseEntity.ok(ApiResponse.error("NOT_AUTHENTICATED", "Not authenticated"));
+            }
+
+            User user = (User) authentication.getPrincipal();
+
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("id", user.getId().toString());
+            userMap.put("email", user.getEmail());
+            userMap.put("fullName", user.getFullName() != null ? user.getFullName() : "");
+            userMap.put("role", user.getRole().name());
+            userMap.put("active", user.getActive());
+            userMap.put("displayName", user.getFullName() != null ? user.getFullName() : user.getEmail());
+            userMap.put("userId", user.getId().toString()); // for backward compatibility
+
+            return ResponseEntity.ok(ApiResponse.success(userMap));
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("NOT_AUTHENTICATED", "Not authenticated"));
+        }
     }
 
     @PostMapping("/refresh")
