@@ -1,8 +1,8 @@
-## ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://192.168.1.14:11435 ANTHROPIC_API_KEY="" claude --model qwen3-coder --dangerously-skip-permissions "run /claude-ui-test salva-ui-tests.md"
+## ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://192.168.1.14:11435 ANTHROPIC_API_KEY="" claude --model qwen3.5:9b --dangerously-skip-permissions "run /claude-ui-test salva-ui-tests.md"
 
-ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://192.168.1.14:11435 ANTHROPIC_API_KEY="" claude --model qwen3-coder --dangerously-skip-permissions --teammate-mode tmux
+ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://192.168.1.14:11435 ANTHROPIC_API_KEY="" claude --model qwen3.5:9b --dangerously-skip-permissions --teammate-mode tmux
 ## Launch Command
-ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://192.168.1.14:11435 ANTHROPIC_API_KEY="" claude --model qwen3-coder
+ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_BASE_URL=http://192.168.1.14:11435 ANTHROPIC_API_KEY="" claude --model qwen3.5:9b
 
 ## Project Overview
 This repo contains Claude Code skills for browser automation and UI testing using Playwright.

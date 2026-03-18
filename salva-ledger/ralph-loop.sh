@@ -11,7 +11,7 @@ set -uo pipefail
 export ANTHROPIC_AUTH_TOKEN=ollama
 export ANTHROPIC_BASE_URL=http://192.168.1.14:11435
 export ANTHROPIC_API_KEY=""
-MODEL="qwen3-coder"
+MODEL="qwen3.5:9b"
 MAX_ITERATIONS=30
 MAX_RETRIES=3
 RETRY_DELAY=5
@@ -53,17 +53,16 @@ log() {
 
 spinner_start() {
   local pid=$1
-  local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-  local i=0
   local start_time=$SECONDS
   while kill -0 "$pid" 2>/dev/null; do
     local elapsed=$(( SECONDS - start_time ))
     local mins=$(( elapsed / 60 ))
     local secs=$(( elapsed % 60 ))
-    printf "\r  [%s] Working... %dm %ds elapsed " "${spin:i++%${#spin}:1}" "$mins" "$secs"
-    sleep 0.2
+    printf "\r  Working... %dm %ds elapsed  " "$mins" "$secs"
+    # Use bash built-in read timeout instead of sleep to avoid fork storm
+    read -t 5 -r < /dev/null 2>/dev/null || true
   done
-  printf "\r%80s\r" ""  # clear spinner line
+  printf "\r%60s\r" ""
 }
 
 get_completed_tasks() {
