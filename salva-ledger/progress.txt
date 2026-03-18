@@ -7,3 +7,5 @@ DONE: Phase1: Implement Veterinarian and Driver CRUD REST API | completed in ite
 DONE: Phase1: Implement Expense CRUD REST API with category filtering | completed in iteration 1
 DONE: Phase1: Add Flyway migration scripts for all tables and indexes (V1: core tables, V2: users/roles, V3: audit logs) | created 3 migration files with 5 tables, 17 indexes, enum types, triggers, and sample data
 DONE: Phase1: Implement JWT authentication endpoints (login, register) | Created User entity, Role enum, JWT tokens, auth controllers, security config, migration V4 for api_audit_logs
+DONE: Phase1: Add Dashboard aggregation endpoint (monthly income, expenses, profit, pending/completed counts) | Created DashboardRepository, DashboardService, DashboardController, DashboardDTO with endpoints for current month and date range filteringSKIP: Phase2: Finish React + Vite + TypeScript + TailwindCSS frontend setup in salva-ledger/frontend/ | failed after 3 retries in iteration 4
+DONE: Phase2: Finish React + Vite + TypeScript + TailwindCSS frontend setup in salva-ledger/frontend/ | completed in iteration 4

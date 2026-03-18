@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ServiceList from './pages/ServiceList';
@@ -10,20 +11,22 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/services" element={<ServiceList />} />
-            <Route path="/services/new" element={<ServiceForm />} />
-            <Route path="/services/:id" element={<ServiceForm />} />
-            <Route path="/expenses" element={<ExpenseList />} />
-          </Routes>
-        </div>
-      </Router>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Routes>
+              <Route path="/" element={<Login />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/services" element={<ServiceList />} />
+              <Route path="/services/new" element={<ServiceForm />} />
+              <Route path="/services/:id" element={<ServiceForm />} />
+              <Route path="/expenses" element={<ExpenseList />} />
+            </Routes>
+          </div>
+        </Router>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 
