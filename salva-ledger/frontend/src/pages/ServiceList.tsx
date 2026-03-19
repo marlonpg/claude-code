@@ -1,80 +1,90 @@
 import { useState, useCallback } from 'react';
-import { useInfinite } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { servicesApi, ServiceStatus } from '../services/api';
 import Layout from '../components/Layout';
 import ServiceCard from '../components/ServiceCard';
 import Button from '../components/Button';
 import FloatingActionButton from '../components/FloatingActionButton';
-import { PageService } from '../services/api';
+
+interface ServicesResponse {
+  content: {
+    id: string;
+    number: number;
+    description: string;
+    totalAmount: number;
+    requesterName: string;
+    veterinarianId: string;
+    driverId?: string;
+    extraCost: number;
+    driverCost: number;
+    vetCost: number;
+    taxAmount: number;
+    netProfit: number;
+    status: ServiceStatus;
+    serviceDate: string;
+  }[];
+  totalElements: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
+  last: boolean;
+}
 
 function ServiceList() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<ServiceStatus | ''>('');
+  const [page, setPage] = useState(0);
 
-  // Use useInfinite hook for infinite scroll
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-  } = useInfinite({
-    queryKey: ['services', 'infinite', search, statusFilter],
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, pages) => {
-      const last = lastPage.last || 0;
-      // Load more if there are more services to fetch
-      return last < (lastPage.totalElements || 0) - 10 ? last + 1 : undefined;
-    },
-    getPreviousPageParam: (firstPage, pages) => 0,
+  // Fetch services with proper pagination
+  const { data, isLoading, error, refetch } = useQuery<ServicesResponse>({
+    queryKey: ['services', page, search, statusFilter],
+    queryFn: () =>
+      servicesApi.getAll({
+        page,
+        size: 10,
+        search: search || undefined,
+        status: statusFilter || undefined,
+      }),
+    staleTime: 5000, // Refresh after 5 seconds
   });
 
-  // Combine all pages into a single array
-  const allPages = data || [];
-  const allServices = allPages.flatMap((page) => page.content || []);
+  // Handle search change - reset to page 0 and refetch
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+      setPage(0);
+      refetch();
+    },
+    [refetch]
+  );
 
-  // Calculate pagination info
-  const totalPages = Math.ceil(allServices.length / 10);
-  const currentPage = Math.min(Math.floor(allServices.length / 10) + 1, totalPages);
+  // Handle status filter change - reset to page 0 and refetch
+  const handleStatusFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setStatusFilter(e.target.value as ServiceStatus || '');
+      setPage(0);
+      refetch();
+    },
+    [refetch]
+  );
 
-  // Check if we're near the bottom
-  const lastPage = allPages[allPages.length - 1] || {};
-  const last = lastPage.last || 0;
-  const hasMore = last < (lastPage.totalElements || 0) - 10;
-
-  // Load more on scroll
-  const handleScroll = useCallback(() => {
-    const target = document.getElementById('services-list-container');
-    if (target) {
-      const { scrollTop, scrollHeight, clientHeight } = target;
-      if (scrollHeight - scrollTop - clientHeight < 100 && hasMore && !isFetchingNextPage) {
-        fetchNextPage();
-      }
-    }
-  }, [hasMore, isFetchingNextPage, fetchNextPage]);
-
-  // Also provide manual load more function
   const handleLoadMore = useCallback(() => {
-    if (hasMore && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasMore, isFetchingNextPage, fetchNextPage]);
+    setPage((prev) => prev + 1);
+  }, []);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    // Reset when search changes
-    const newData = [...data];
-    newData[0] = { content: [], meta: data[0]?.meta };
+  const handleServiceClick = (id: string) => {
+    navigate(`/services/${id}`);
   };
 
-  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatusFilter(e.target.value || undefined);
-    // Reset when filter changes
-    const newData = [...data];
-    newData[0] = { content: [], meta: data[0]?.meta };
+  const handleDelete = (id: string) => {
+    if (confirm('Are you sure you want to delete this service?')) {
+      servicesApi.delete(id).then(() => {
+        refetch();
+      });
+    }
   };
 
   if (isLoading) {
@@ -108,26 +118,13 @@ function ServiceList() {
               Manage and view all transport services
             </p>
           </div>
-          <Button onClick={() => navigate('/services/new')} variant="secondary">
-            <svg
-              className="h-5 w-5 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
+          <Button onClick={() => navigate('/services/new')}>
             Add Service
           </Button>
         </div>
       </div>
 
-      <div id="services-list-container" onScroll={handleScroll}>
+      <div id="services-list-container" onScroll={() => {}}>
         {/* Filters */}
         <div className="mb-4 flex flex-wrap gap-3">
           {/* Search Input */}
@@ -135,7 +132,7 @@ function ServiceList() {
             <input
               type="text"
               value={search}
-              onChange={handleSearch}
+              onChange={handleSearchChange}
               placeholder="Search by description..."
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm touch-manipulation bg-white"
             />
@@ -156,27 +153,27 @@ function ServiceList() {
 
         {/* Mobile-first card list */}
         <div className="space-y-3">
-          {allServices.map((service) => (
+          {data?.content?.map((service) => (
             <ServiceCard
               key={service.id}
               service={service}
-              onClick={() => navigate(`/services/${service.id}`)}
+              onClick={() => handleServiceClick(service.id)}
+              onDelete={() => handleDelete(service.id)}
             />
           ))}
         </div>
 
         {/* Infinite scroll loading indicator */}
-        {isFetchingNextPage && (
+        {page < data?.totalPages && (
           <div className="text-center py-4">
             <div className="inline-flex items-center gap-2 text-sm text-gray-500">
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-500 border-t-transparent"></div>
               Loading more services...
             </div>
           </div>
         )}
 
-        {/* Load more button (optional fallback) */}
-        {hasMore && !isFetchingNextPage && (
+        {/* Load more button */}
+        {page < data?.totalPages && (
           <div className="text-center py-4">
             <Button
               size="sm"
@@ -189,7 +186,7 @@ function ServiceList() {
         )}
 
         {/* Empty state */}
-        {allServices.length === 0 && (
+        {(!data?.content || data.content.length === 0) && (
           <div className="text-center py-12 text-gray-500">
             <div className="text-4xl mb-3">📋</div>
             <p className="text-lg font-medium">No services found</p>
@@ -203,7 +200,8 @@ function ServiceList() {
                 className="mt-4"
                 onClick={() => {
                   setSearch('');
-                  setStatusFilter(undefined);
+                  setStatusFilter('');
+                  refetch();
                 }}
               >
                 Clear filters
@@ -218,11 +216,10 @@ function ServiceList() {
 
       {/* Show page indicator on desktop only */}
       <div className="hidden sm:block mt-4 text-center text-sm text-gray-500">
-        Showing services {allServices.length}
-        {hasMore && (
+        Showing services {data?.content?.length || 0}
+        {page < data?.totalPages && (
           <>
-            {' '}of {lastPage.totalElements || allServices.length}
-            {' '}({Math.ceil((allServices.length - 1) / 10) + 1} pages)
+            {' '}of {data.totalElements || 0} ({data.totalPages + 1} pages)
           </>
         )}
       </div>

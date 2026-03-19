@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { dashboardApi, DashboardData } from '../services/api';
+import { dashboardApi, DashboardData, dashboardApiByDateRange } from '../services/api';
 import Layout from '../components/Layout';
 import Card from '../components/Card';
 
@@ -11,17 +11,33 @@ function Dashboard() {
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
+  // Get date range from query params or use current month
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedMonth = urlParams.get('month') || currentMonth.toString();
+  const selectedYear = urlParams.get('year') || currentYear.toString();
+
+  const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
+  const endDate = new Date(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`).setMonth(Number(selectedMonth) + 1)
+    ? new Date(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`).setMonth(Number(selectedMonth)) + 1
+    : new Date(`${selectedYear}-${String((Number(selectedMonth) % 12 + 11).toString().padStart(2, '0') + 10)}-01`).setMonth(Number(selectedMonth) + 2);
+
+  // Format end date (last day of selected month)
+  const lastDayOfMonth = new Date(`${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`);
+  lastDayOfMonth.setMonth(lastDayOfMonth.getMonth() + 1);
+  const endDateStr = lastDayOfMonth.toISOString().split('T')[0];
+
+  // Use date range API
   const { data, isLoading, error } = useQuery<DashboardData>({
-    queryKey: ['dashboard', 'current-month'],
-    queryFn: () => dashboardApi(),
+    queryKey: ['dashboard', 'date-range', selectedYear, selectedMonth],
+    queryFn: () => dashboardApiByDateRange(startDate, endDateStr),
   });
 
   // Generate month options
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const m = i + 1;
     return {
-      value: `${currentYear}-${String(m).padStart(2, '0')}`,
-      label: `${m}/${currentYear} ${i === currentMonth - 1 ? '(Current)' : ''}`,
+      value: `${selectedYear}-${String(m).padStart(2, '0')}`,
+      label: `${m}/${selectedYear} ${i === currentMonth - 1 ? '(Current)' : ''}`,
     };
   });
 
@@ -76,12 +92,15 @@ function Dashboard() {
     <Layout>
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Period: {selectedMonth}/{selectedYear}
+        </p>
       </div>
 
       {/* Month Filter - Select */}
       <div className="mb-6">
         <select
-          value={`${currentYear}-${String(currentMonth).padStart(2, '0')}`}
+          value={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`}
           onChange={(e) => {
             const [year, month] = e.target.value.split('-').map(Number);
             navigate(`/dashboard?month=${month}&year=${year}`);

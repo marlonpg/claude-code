@@ -344,6 +344,23 @@ export const useServiceUpdate = () => {
   };
 };
 
+export const useServiceDelete = () => {
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<void, Error, string>({
+    mutationFn: servicesApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+    },
+  });
+
+  return {
+    ...mutation,
+    isDeleting: isPending,
+  };
+};
+
 export const useVets = () => {
   return useQuery({
     queryKey: ['veterinarians'],
@@ -408,6 +425,20 @@ export function useDashboard() {
   });
 }
 
+export function useDashboardByDateRange(startDate: string, endDate: string) {
+  return useQuery<DashboardData>({
+    queryKey: ['dashboard', 'date-range', startDate, endDate],
+    queryFn: () => dashboardApiByDateRange(startDate, endDate),
+  });
+}
+
+export function useDashboardByMonth(year: number, month: number) {
+  return useQuery<DashboardData>({
+    queryKey: ['dashboard', 'month', year, month],
+    queryFn: () => dashboardApiByMonth(year, month),
+  });
+}
+
 export function useVets() {
   return useQuery({
     queryKey: ['veterinarians'],
@@ -460,23 +491,47 @@ export interface PageService {
 }
 
 export function useLogin() {
-  return useMutation<LoginResponse, Error, LoginRequest>({
+  const [isPending, startTransition] = useTransition();
+
+  const mutation = useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: authApi.login,
+    onSuccess: (data) => {
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_user', JSON.stringify({
+        id: data.userId,
+        email: data.email,
+        role: data.role,
+      }));
+    },
   });
+
+  return mutation;
 }
 
 export function useRegister() {
-  return useMutation<RegisterResponse, Error, RegisterRequest>({
+  const [isPending, startTransition] = useTransition();
+
+  const mutation = useMutation<RegisterResponse, Error, RegisterRequest>({
     mutationFn: authApi.register,
+    onSuccess: (data) => {
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('auth_user', JSON.stringify({
+        id: data.userId,
+        email: data.email,
+        role: data.role,
+      }));
+    },
   });
+
+  return mutation;
 }
 
 export function useUserInfo() {
   return useQuery<UserInfo>({
     queryKey: ['user-info'],
     queryFn: () => authApi.getUserInfo(),
-    staleTime: Infinity, // Never stale as long as we're authenticated
-    enabled: false, // Only run when explicitly triggered
+    staleTime: Infinity,
+    enabled: false,
   });
 }
 
