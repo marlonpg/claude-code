@@ -1,17 +1,36 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { dashboardApi } from '../services/api';
-import { DashboardData } from '../services/api';
+import { dashboardApi, DashboardData } from '../services/api';
 import Layout from '../components/Layout';
 import Card from '../components/Card';
 
 function Dashboard() {
   const navigate = useNavigate();
 
+  // Get current month for dropdown
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+
   const { data, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['dashboard', 'current-month'],
     queryFn: () => dashboardApi(),
   });
+
+  // Generate month options
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1;
+    return {
+      value: `${currentYear}-${String(m).padStart(2, '0')}`,
+      label: `${m}/${currentYear} ${i === currentMonth - 1 ? '(Current)' : ''}`,
+    };
+  });
+
+  // Build the month options HTML
+  const monthOptionsHtml = monthOptions.map((opt) => (
+    <option key={opt.value} value={opt.value}>
+      {opt.label}
+    </option>
+  ));
 
   if (isLoading) {
     return (
@@ -50,79 +69,105 @@ function Dashboard() {
     );
   }
 
-  const profitColor = data.totalProfit >= 0 ? 'text-success' : 'text-danger';
-  const profitBackground = data.totalProfit >= 0 ? 'bg-success-50' : 'bg-danger-50';
   const incomeColor = data.totalIncome ? 'text-success' : 'text-gray-400';
   const expenseColor = data.totalExpenses ? 'text-danger' : 'text-gray-400';
 
   return (
     <Layout>
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">
-          {new Date().toLocaleDateString('en-US', {
-            month: 'long',
-            year: 'numeric',
-          })}
-        </p>
       </div>
 
+      {/* Month Filter - Select */}
+      <div className="mb-6">
+        <select
+          value={`${currentYear}-${String(currentMonth).padStart(2, '0')}`}
+          onChange={(e) => {
+            const [year, month] = e.target.value.split('-').map(Number);
+            navigate(`/dashboard?month=${month}&year=${year}`);
+          }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white touch-manipulation transition-colors appearance-none"
+          style={{
+            backgroundImage: 'none',
+            backgroundImage: `
+              linear-gradient(45deg, transparent 50%, rgba(220, 230, 250, 0.5) 50%),
+              linear-gradient(-45deg, transparent 50%, rgba(220, 230, 250, 0.5) 50%)
+            `,
+            backgroundPosition: 'calc(100% + 0.4em) calc(100% + 0.4em),
+            backgroundSize: '1em 1em, 1em 1em,
+            backgroundRepeat: 'no-repeat',
+          }}
+        >
+          {monthOptionsHtml}
+        </select>
+      </div>
+
+      {/* Dashboard Data Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5 mb-6">
-        <Card>
+        {/* Income Card */}
+        <Card className="bg-success-50 border-success-200 hover:shadow-md transition-shadow duration-200">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-gray-500">Total Income</span>
-            <span className={`text-2xl font-bold ${incomeColor} mt-1`}>
+            <span className={`text-3xl font-bold text-success-600 mt-1`}>
               ${data.totalIncome?.toFixed(2) || '0.00'}
             </span>
+            {data.totalIncome && <span className="text-xs text-gray-400 mt-1">from services</span>}
           </div>
         </Card>
 
-        <Card>
+        {/* Expenses Card */}
+        <Card className="bg-danger-50 border-danger-200 hover:shadow-md transition-shadow duration-200">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-gray-500">Total Expenses</span>
-            <span className={`text-2xl font-bold ${expenseColor} mt-1`}>
+            <span className={`text-3xl font-bold text-danger-600 mt-1`}>
               ${data.totalExpenses?.toFixed(2) || '0.00'}
             </span>
+            {data.totalExpenses && <span className="text-xs text-gray-400 mt-1">operational costs</span>}
           </div>
         </Card>
 
-        <Card>
+        {/* Profit Card */}
+        <Card className={`${data.totalProfit >= 0 ? 'bg-success-50' : 'bg-danger-50'} hover:shadow-md transition-shadow duration-200`}>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-gray-500">Total Profit</span>
-            <span className={`text-2xl font-bold ${profitColor} mt-1`}>
+            <span className={`text-3xl font-bold ${data.totalProfit >= 0 ? 'text-success-600' : 'text-danger-600'} mt-1`}>
               ${data.totalProfit?.toFixed(2) || '0.00'}
             </span>
+            {data.totalProfit && <span className="text-xs text-gray-400 mt-1">net profit</span>}
           </div>
         </Card>
 
-        <Card>
+        {/* Pending Services Card */}
+        <Card className="bg-amber-50 border-amber-200 hover:shadow-md transition-shadow duration-200">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-gray-500">Pending Services</span>
-            <span className="text-2xl font-bold text-primary-600 mt-1">
+            <span className="text-3xl font-bold text-amber-600 mt-1">
               {data.pendingServicesCount || 0}
             </span>
+            <span className="text-xs text-gray-400 mt-1">awaiting attention</span>
           </div>
         </Card>
 
-        <Card>
+        {/* Completed Services Card */}
+        <Card className="bg-success-50 border-success-200 hover:shadow-md transition-shadow duration-200">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-gray-500">Completed Services</span>
-            <span className="text-2xl font-bold text-success mt-1">
+            <span className="text-3xl font-bold text-success-600 mt-1">
               {data.completedServicesCount || 0}
             </span>
+            <span className="text-xs text-gray-400 mt-1">successfully completed</span>
           </div>
         </Card>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4 sm:mb-0">
-            Quick Actions
-          </h2>
-          <div className="flex space-x-3">
+      {/* Quick Actions Section */}
+      <div className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate('/services/new')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               <svg
                 className="mr-2 h-5 w-5"
@@ -140,7 +185,7 @@ function Dashboard() {
               Add Service
             </button>
             <button
-              onClick={() => navigate('/expenses')}
+              onClick={() => navigate('/expenses/new')}
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               <svg
@@ -162,6 +207,7 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* View All Services Link */}
       <div className="mt-6">
         <button
           onClick={() => navigate('/services')}
