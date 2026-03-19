@@ -253,6 +253,42 @@ export interface UserInfo {
   full_name?: string;
 }
 
+// Expense mutations
+export const useExpenseCreate = () => {
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<ExpenseDTO, Error, ExpenseDTO>({
+    mutationFn: expensesApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+
+  return {
+    ...mutation,
+    isCreating: isPending,
+  };
+};
+
+export const useExpenseUpdate = () => {
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<ExpenseDTO, Error, string, Partial<ExpenseDTO>>({
+    mutationFn: ({ id, variables }: { id: string; variables: Partial<ExpenseDTO> }) =>
+      expensesApi.update(id, variables),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+
+  return {
+    ...mutation,
+    isUpdating: isPending,
+  };
+};
+
 // Hook wrappers
 export function useServices(options?: { page?: number; size?: number }) {
   return useQuery({
@@ -272,6 +308,91 @@ export function useService(id: string) {
     queryFn: () => servicesApi.getById(id),
   });
 }
+
+export const useServiceCreate = () => {
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<ServiceDTO, Error, ServiceDTO>({
+    mutationFn: servicesApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+    },
+  });
+
+  return {
+    ...mutation,
+    isCreating: isPending,
+  };
+};
+
+export const useServiceUpdate = () => {
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<ServiceDTO, Error, string, Partial<ServiceDTO>>({
+    mutationFn: ({ id, variables }: { id: string; variables: Partial<ServiceDTO> }) =>
+      servicesApi.update(id, variables),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+    },
+  });
+
+  return {
+    ...mutation,
+    isUpdating: isPending,
+  };
+};
+
+export const useVets = () => {
+  return useQuery({
+    queryKey: ['veterinarians'],
+    queryFn: () => vetsApi.getAll(),
+  });
+};
+
+export const useVetUpdate = () => {
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<VeterinarianDTO, Error, string, Partial<VeterinarianDTO>>({
+    mutationFn: ({ id, variables }: { id: string; variables: Partial<VeterinarianDTO> }) =>
+      vetsApi.update(id, variables),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['veterinarians'] });
+    },
+  });
+
+  return {
+    ...mutation,
+    isUpdating: isPending,
+  };
+};
+
+export const useDrivers = () => {
+  return useQuery({
+    queryKey: ['drivers'],
+    queryFn: () => driversApi.getAll(),
+  });
+};
+
+export const useDriverUpdate = () => {
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<DriverDTO, Error, string, Partial<DriverDTO>>({
+    mutationFn: ({ id, variables }: { id: string; variables: Partial<DriverDTO> }) =>
+      driversApi.update(id, variables),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+    },
+  });
+
+  return {
+    ...mutation,
+    isUpdating: isPending,
+  };
+};
 
 export function useExpenses(options?: { page?: number; size?: number }) {
   return useQuery({

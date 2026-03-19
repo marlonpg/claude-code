@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ServiceList from './pages/ServiceList';
 import ServiceForm from './pages/ServiceForm';
 import ExpenseList from './pages/ExpenseList';
+import ExpenseForm from './pages/ExpenseForm';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient();
@@ -22,6 +23,8 @@ function App() {
               <Route path="/services/new" element={<ServiceForm />} />
               <Route path="/services/:id" element={<ServiceForm />} />
               <Route path="/expenses" element={<ExpenseList />} />
+              <Route path="/expenses/new" element={<ExpenseForm />} />
+              <Route path="/expenses/:id" element={<ExpenseForm />} />
             </Routes>
           </div>
         </Router>

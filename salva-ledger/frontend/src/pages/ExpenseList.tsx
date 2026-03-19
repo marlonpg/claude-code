@@ -1,30 +1,32 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { expensesApi } from '../services/api';
+import { useExpenses } from '../services/api';
 import Layout from '../components/Layout';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import InputField from '../components/InputField';
 import Select from '../components/Select';
+import ExpenseCard from '../components/ExpenseCard';
+import { ExpenseCategory } from '../types/api';
 
 const expenseCategories = [
-  { value: 'FUEL', label: 'Fuel' },
-  { value: 'MAINTENANCE', label: 'Maintenance' },
-  { value: 'EQUIPMENT', label: 'Equipment' },
-  { value: 'TAX', label: 'Tax' },
-  { value: 'OTHER', label: 'Other' },
+  { value: ExpenseCategory.FUEL, label: 'Fuel' },
+  { value: ExpenseCategory.MAINTENANCE, label: 'Maintenance' },
+  { value: ExpenseCategory.EQUIPMENT, label: 'Equipment' },
+  { value: ExpenseCategory.TAX, label: 'Tax' },
+  { value: ExpenseCategory.OTHER, label: 'Other' },
 ] as const;
 
 function ExpenseList() {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
+  const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | ''>('');
 
-  const { data: expensesData, isLoading, error } = useQuery({
-    queryKey: ['expenses', page, search, categoryFilter],
-    queryFn: () => expensesApi.getAll({ page, size: 10, search, category: categoryFilter }),
+  const { data: expensesData, isLoading, error } = useExpenses({
+    page,
+    size: 10,
+    category: categoryFilter || undefined,
   });
 
   if (isLoading) {
@@ -78,7 +80,7 @@ function ExpenseList() {
 
           <Select
             value={categoryFilter || ''}
-            onChange={(e) => setCategoryFilter(e.target.value || undefined)}
+            onChange={(e) => setCategoryFilter(e.target.value as ExpenseCategory | '')}
             options={[
               { value: '', label: 'All Categories' },
               ...expenseCategories,
@@ -99,24 +101,12 @@ function ExpenseList() {
 
         <div className="space-y-3">
           {expensesData?.content?.map((expense) => (
-            <div
+            <ExpenseCard
               key={expense.id}
-              className="group bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="text-base font-semibold text-gray-900">{expense.description}</div>
-                  <div className="text-sm text-gray-500">{new Date(expense.date).toLocaleDateString()}</div>
-                </div>
-
-                <div className="flex flex-col items-end">
-                  <div className="text-lg font-bold text-danger">${expense.amount?.toFixed(2) || '0.00'}</div>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-                    {expense.category || 'Other'}
-                  </span>
-                </div>
-              </div>
-            </div>
+              expense={expense}
+              onEdit={(id) => navigate(`/expenses/${id}`)}
+              onDelete={() => navigate('/expenses')}
+            />
           ))}
         </div>
 
