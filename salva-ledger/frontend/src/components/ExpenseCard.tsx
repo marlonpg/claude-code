@@ -9,6 +9,7 @@ interface ExpenseCardProps {
     category: ExpenseCategory;
     date: string;
   };
+  loading?: boolean;
   onDelete?: (id: string) => void;
   onEdit?: (id: string) => void;
 }
@@ -23,13 +24,16 @@ const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
 
 const ExpenseCard: React.FC<ExpenseCardProps> = ({
   expense,
+  loading,
   onDelete,
   onEdit,
 }) => {
   const categoryColor = CATEGORY_COLORS[expense.category] || CATEGORY_COLORS.OTHER;
 
   return (
-    <div className="group bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow animate-fade-in">
+    <div className={`group bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow animate-fade-in ${
+      loading ? 'opacity-50 pointer-events-none' : ''
+    }`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="text-base font-semibold text-gray-900">{expense.description}</div>

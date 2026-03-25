@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation, useTransition } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { servicesApi, ServiceStatus } from '../services/api';
+import { servicesApi, ServiceStatus, useServiceDelete, useServices } from '../services/api';
 import Layout from '../components/Layout';
 import ServiceCard from '../components/ServiceCard';
 import Button from '../components/Button';
@@ -38,17 +38,12 @@ function ServiceList() {
   const [statusFilter, setStatusFilter] = useState<ServiceStatus | ''>('');
   const [page, setPage] = useState(0);
 
-  // Fetch services with proper pagination
-  const { data, isLoading, error, refetch } = useQuery<ServicesResponse>({
-    queryKey: ['services', page, search, statusFilter],
-    queryFn: () =>
-      servicesApi.getAll({
-        page,
-        size: 10,
-        search: search || undefined,
-        status: statusFilter || undefined,
-      }),
-    staleTime: 5000, // Refresh after 5 seconds
+  // Fetch services with proper pagination using useServices hook
+  const { data, isLoading, error, refetch } = useServices({
+    page,
+    size: 10,
+    search: search || undefined,
+    status: statusFilter || undefined,
   });
 
   // Handle search change - reset to page 0 and refetch
@@ -79,13 +74,16 @@ function ServiceList() {
     navigate(`/services/${id}`);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this service?')) {
-      servicesApi.delete(id).then(() => {
-        refetch();
-      });
-    }
-  };
+  const { mutate: handleDelete, isDeleting } = useServiceDelete();
+
+  const handleDeleteWithConfirm = useCallback(
+    (id: string) => {
+      if (confirm('Are you sure you want to delete this service?')) {
+        handleDelete(id);
+      }
+    },
+    [handleDelete]
+  );
 
   if (isLoading) {
     return (
@@ -157,6 +155,7 @@ function ServiceList() {
             <ServiceCard
               key={service.id}
               service={service}
+              loading={isDeleting}
               onClick={() => handleServiceClick(service.id)}
               onDelete={() => handleDelete(service.id)}
             />

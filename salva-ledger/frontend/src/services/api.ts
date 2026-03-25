@@ -294,11 +294,6 @@ export function useServices(options?: { page?: number; size?: number }) {
   return useQuery({
     queryKey: ['services', options],
     queryFn: () => servicesApi.getAll(options),
-    select: (data) => ({
-      ...data,
-      content: data.content || [],
-      empty: !data.content || data.content.length === 0,
-    }),
   });
 }
 

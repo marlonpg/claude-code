@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useExpenses, expensesApi, ExpenseDTO } from '../services/api';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { expensesApi, ExpenseDTO, useExpenses } from '../services/api';
 import { ExpenseCategory } from '../types/api';
 import Layout from '../components/Layout';
 import Card from '../components/Card';
@@ -22,8 +22,12 @@ type ExpenseFormData = Omit<ExpenseDTO, 'id'>;
 
 const ExpenseForm: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
   const { id } = useParams<{ id?: string }>();
-  const isEdit = !!id;
+
+  // Check if we're in edit mode based on URL params
+  const isEdit = !!id && !location.pathname.endsWith('/new');
 
   // Form state
   const [description, setDescription] = useState('');
@@ -31,47 +35,45 @@ const ExpenseForm: React.FC = () => {
   const [category, setCategory] = useState<ExpenseCategory>(expenseCategories[0].value);
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
 
-  // Load all expenses for editing - fetch directly on mount or when ID changes
-  const { data: existingExpenses } = useExpenses({ page: 0, size: 100 });
+  // Fetch expenses for editing
+  const { data: expenseList } = useExpenses({ page: 0, size: 100 });
 
   // Get existing expense when needed
-  const existingExpense = useCallback(
-    () => (id ? existingExpenses?.content?.find((e) => e.id === id) : undefined),
-    [id, existingExpenses]
-  );
+  const existingExpense = id ? expenseList?.content?.find((e) => e.id === id) : undefined;
 
-  const queryClient = useQueryClient();
+  // Create expense mutation
+  const createMutation = useMutation<ExpenseDTO, Error, ExpenseFormData>({
+    mutationFn: expensesApi.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
 
-  useEffect(() => {
-    if (isEdit) {
-      const expense = existingExpense();
-      if (expense) {
-        setDescription(expense.description);
-        setAmount(expense.amount.toString());
-        setCategory(expense.category);
-        setDate(expense.date);
-      }
-    }
-  }, [id]);
+  // Update expense mutation
+  const updateMutation = useMutation<ExpenseDTO, Error, string, Partial<ExpenseDTO>>({
+    mutationFn: ({ id, variables }: { id: string; variables: Partial<ExpenseDTO> }) =>
+      expensesApi.update(id, variables),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
 
   const handleSave = useCallback(
     async (formData: ExpenseFormData) => {
       try {
-        if (isEdit && id) {
+        if (isEdit && id && existingExpense) {
           // Update existing expense
-          await expensesApi.update(id, formData);
+          await updateMutation.mutateAsync({ id, variables: existingExpense });
         } else {
           // Create new expense
-          await expensesApi.create(formData);
+          await createMutation.mutateAsync(formData);
         }
-        // Refresh the expenses list
-        queryClient.invalidateQueries({ queryKey: ['expenses'] });
         navigate('/expenses');
       } catch (error) {
         console.error('Failed to save expense:', error);
       }
     },
-    [id, isEdit, queryClient]
+    [id, isEdit, queryClient, createMutation, updateMutation, existingExpense]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {

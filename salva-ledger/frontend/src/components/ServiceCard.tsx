@@ -10,6 +10,7 @@ interface ServiceCardProps {
     netProfit: number;
     serviceDate: string;
   };
+  loading?: boolean;
   onClick?: () => void;
   onDelete?: () => void;
   onComplete?: () => void;
@@ -17,6 +18,7 @@ interface ServiceCardProps {
 
 function ServiceCard({
   service,
+  loading,
   onClick,
   onDelete,
   onComplete,
@@ -24,7 +26,9 @@ function ServiceCard({
   return (
     <div
       onClick={onClick}
-      className="group bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer touch-manipulation animate-fade-in hover:border-primary-300 hover:-translate-y-0.5"
+      className={`group bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer touch-manipulation animate-fade-in hover:border-primary-300 hover:-translate-y-0.5 ${
+        loading ? 'opacity-50 pointer-events-none' : ''
+      }`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
