@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useTransition, useInfinite } from '@tanstack/react-query';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -117,30 +117,24 @@ export const expensesApi = {
 };
 
 // Dashboard API - current month by default
-export const dashboardApi = () =>
-  axiosInstance.get<DashboardData>('/dashboard/current');
+export const dashboardApi = () => axiosInstance.get('/dashboard/current') as Promise<DashboardData>;
 
 // Dashboard API - for specific month
 export const dashboardApiByMonth = (year: number, month: number) =>
-  axiosInstance.get<DashboardData>('/dashboard', {
-    params: { year, month },
-  });
+  axiosInstance.get('/dashboard', { params: { year, month } }) as Promise<DashboardData>;
 
 // Dashboard API - for date range
 export const dashboardApiByDateRange = (
   startDate: string,
   endDate: string
-) =>
-  axiosInstance.get<DashboardData>('/dashboard/range', {
-    params: { startDate, endDate },
-  });
+) => axiosInstance.get('/dashboard/range', { params: { startDate, endDate } }) as Promise<DashboardData>;
 
 // Veterinarians API
 export const vetsApi = {
   getAll: () => axiosInstance.get<VeterinarianDTO[]>('/veterinarians'),
   getById: (id: string) => axiosInstance.get<VeterinarianDTO>(`/veterinarians/${id}`),
-  create: (vet: Partial<VeterinarianDTO>) => axiosInstance.post<VeterinarianDTO>('/veterinarians', vet),
-  update: (id: string, vet: Partial<VeterinarianDTO>) => axiosInstance.put<VeterinarianDTO>(`/veterinarians/${id}`, vet),
+  create: (vet: Partial<VeterinarianDTO>) => axiosInstance.post('/veterinarians', vet) as Promise<VeterinarianDTO>,
+  update: (id: string, vet: Partial<VeterinarianDTO>) => axiosInstance.put(`/veterinarians/${id}`, vet) as Promise<VeterinarianDTO>,
   delete: (id: string) => axiosInstance.delete(`/veterinarians/${id}`),
 };
 
@@ -148,18 +142,19 @@ export const vetsApi = {
 export const driversApi = {
   getAll: () => axiosInstance.get<DriverDTO[]>('/drivers'),
   getById: (id: string) => axiosInstance.get<DriverDTO>(`/drivers/${id}`),
-  create: (driver: Partial<DriverDTO>) => axiosInstance.post<DriverDTO>('/drivers', driver),
-  update: (id: string, driver: Partial<DriverDTO>) => axiosInstance.put<DriverDTO>(`/drivers/${id}`, driver),
+  create: (driver: Partial<DriverDTO>) => axiosInstance.post('/drivers', driver) as Promise<DriverDTO>,
+  update: (id: string, driver: Partial<DriverDTO>) => axiosInstance.put(`/drivers/${id}`, driver) as Promise<DriverDTO>,
   delete: (id: string) => axiosInstance.delete(`/drivers/${id}`),
 };
 
 // Auth API
 export const authApi = {
-  login: (data: LoginRequest) =>
-    axiosInstance.post<LoginResponse>('/auth/login', data),
+  login: async (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
+    const response = await axiosInstance.post<LoginResponse>('/auth/login', data);
+    return { success: response.data.success || true, data: response.data };
+  },
 
-  register: (data: RegisterRequest) =>
-    axiosInstance.post<RegisterResponse>('/auth/register', data),
+  register: (data: RegisterRequest) => axiosInstance.post('/auth/register', data),
 
   logout: () => axiosInstance.post('/auth/logout'),
 
@@ -227,10 +222,13 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  success: boolean;
+  message?: string;
   token: string;
   userId: string;
   email: string;
-  role: string;
+  role: 'ROLE_ADMIN' | 'ROLE_ASSISTANT' | 'ROLE_DRIVER' | 'ROLE_USER';
+  full_name?: string;
 }
 
 export interface RegisterRequest {
@@ -255,7 +253,6 @@ export interface UserInfo {
 
 // Expense mutations
 export const useExpenseCreate = () => {
-  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
   const mutation = useMutation<ExpenseDTO, Error, ExpenseDTO>({
@@ -267,12 +264,11 @@ export const useExpenseCreate = () => {
 
   return {
     ...mutation,
-    isCreating: isPending,
+    isCreating: mutation.isPending,
   };
 };
 
 export const useExpenseUpdate = () => {
-  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
   const mutation = useMutation<ExpenseDTO, Error, string, Partial<ExpenseDTO>>({
@@ -285,7 +281,7 @@ export const useExpenseUpdate = () => {
 
   return {
     ...mutation,
-    isUpdating: isPending,
+    isUpdating: mutation.isPending,
   };
 };
 
@@ -305,7 +301,6 @@ export function useService(id: string) {
 }
 
 export const useServiceCreate = () => {
-  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
   const mutation = useMutation<ServiceDTO, Error, ServiceDTO>({
@@ -317,12 +312,11 @@ export const useServiceCreate = () => {
 
   return {
     ...mutation,
-    isCreating: isPending,
+    isCreating: mutation.isPending,
   };
 };
 
 export const useServiceUpdate = () => {
-  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
   const mutation = useMutation<ServiceDTO, Error, string, Partial<ServiceDTO>>({
@@ -335,12 +329,11 @@ export const useServiceUpdate = () => {
 
   return {
     ...mutation,
-    isUpdating: isPending,
+    isUpdating: mutation.isPending,
   };
 };
 
 export const useServiceDelete = () => {
-  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
   const mutation = useMutation<void, Error, string>({
@@ -352,7 +345,7 @@ export const useServiceDelete = () => {
 
   return {
     ...mutation,
-    isDeleting: isPending,
+    isDeleting: mutation.isPending,
   };
 };
 
@@ -521,15 +514,6 @@ export function useRegister() {
   return mutation;
 }
 
-export function useUserInfo() {
-  return useQuery<UserInfo>({
-    queryKey: ['user-info'],
-    queryFn: () => authApi.getUserInfo(),
-    staleTime: Infinity,
-    enabled: false,
-  });
-}
-
 export enum ServiceStatus {
   PENDING = 'PENDING',
   COMPLETED = 'COMPLETED',
@@ -543,3 +527,14 @@ export enum ExpenseCategory {
   TAX = 'TAX',
   OTHER = 'OTHER',
 }
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+}
+
+export const getUserInfo = async (): Promise<ApiResponse<UserInfo>> => {
+  const response = await axiosInstance.get<UserInfo>('/auth/me');
+  return { success: true, data: response.data };
+};

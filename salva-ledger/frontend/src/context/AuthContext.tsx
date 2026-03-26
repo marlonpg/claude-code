@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useUserInfo } from '../services/api';
+import axios from 'axios';
+import { API_URL } from '../services/api';
 import { UserInfo } from '../services/api';
 
 interface AuthContextType {
@@ -13,18 +14,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+// API base URL for fetch calls (works with Vite proxy in dev and direct calls in prod)
+const API_BASE = API_URL.replace('/api', '');
 
-  const { data: userInfoData, isLoading: userInfoLoading } = useUserInfo();
+function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated, setIsLoading] = useState<false | null | true>(true);
 
   const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
 
-  // Get user from API response or localStorage
-  const user = userInfoData || (
-    (localStorage.getItem('auth_user') ? JSON.parse(localStorage.getItem('auth_user')!) : null)
-  );
+  // Get user from localStorage
+  const user = localStorage.getItem('auth_user') ? JSON.parse(localStorage.getItem('auth_user')!) : null;
 
   useEffect(() => {
     const initAuth = async () => {
@@ -33,22 +32,17 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (storedToken && storedUser) {
         try {
-          const parsedUser = JSON.parse(storedUser);
           // Verify token is still valid by fetching user info
           try {
-            const infoData = await fetch('/api/auth/me', {
-              headers: { Authorization: `Bearer ${storedToken}` },
-            }).then(res => res.json());
-
-            if (infoData.success) {
-              const userFromApi = infoData.data as UserInfo;
-              localStorage.setItem('auth_user', JSON.stringify(userFromApi));
-              setUser(userFromApi);
+            const info = await getUserInfo();
+            if (info.success) {
+              localStorage.setItem('auth_user', JSON.stringify(info.data));
+              setUser(info.data);
               setIsAuthenticated(true);
             }
-          } catch (apiError) {
+          } catch (error) {
             // Token expired, clear storage
-            console.error('Token expired:', apiError);
+            console.error('Token expired:', error);
           }
         } catch {
           localStorage.removeItem('auth_token');
@@ -72,19 +66,16 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string, rememberMe = false) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, rememberMe }),
-    });
+    const response = await axiosInstance.post<{ token: string; email: string; role: string; userId: string; full_name?: string; success: boolean; message?: string }>(
+      '/auth/login',
+      { email, password, rememberMe }
+    );
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Login failed');
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Login failed');
     }
 
-    const { token: authToken, email, role, userId, full_name } = data.data;
+    const { token: authToken, role, userId, full_name } = response.data;
 
     // Save token and user
     localStorage.setItem('auth_token', authToken);
@@ -101,7 +92,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -118,23 +109,19 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const refreshResponse = await axiosInstance.post('/auth/refresh', null, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        throw new Error('Failed to refresh token');
-      }
-      // After refresh, fetch user info again to get updated token
-      const infoResponse = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (infoResponse.ok) {
-        const info = await infoResponse.json();
-        if (info.success) {
-          const user = info.data as UserInfo;
+      if (refreshResponse.data.success) {
+        // After refresh, fetch user info again to get updated token
+        const userInfo = await getUserInfo();
+        if (userInfo.success) {
+          const user = userInfo.data;
           localStorage.setItem('auth_user', JSON.stringify(user));
           setUser(user);
         }
+      } else {
+        throw new Error('Token refresh failed');
       }
     } catch (error) {
       console.error('Token refresh failed:', error);

@@ -107,14 +107,14 @@ function Dashboard() {
           }}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 sm:text-sm bg-white touch-manipulation transition-colors appearance-none"
           style={{
-            backgroundImage: 'none',
             backgroundImage: `
               linear-gradient(45deg, transparent 50%, rgba(220, 230, 250, 0.5) 50%),
               linear-gradient(-45deg, transparent 50%, rgba(220, 230, 250, 0.5) 50%)
             `,
-            backgroundPosition: 'calc(100% + 0.4em) calc(100% + 0.4em),
-            backgroundSize: '1em 1em, 1em 1em,
+            backgroundPosition: 'calc(100% + 0.4em) calc(100% + 0.4em), calc(100% + 0.4em) calc(100% + 0.4em)',
+            backgroundSize: '1em 1em, 1em 1em',
             backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'local',
           }}
         >
           {monthOptionsHtml}

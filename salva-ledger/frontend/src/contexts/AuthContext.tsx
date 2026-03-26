@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { authApi, LoginRequest, LoginResponse, UserInfo } from '../services/api';
+import { authApi, LoginRequest, LoginResponse } from '../services/api';
 import { User } from '../types/auth';
 
 // Auth context type
@@ -11,7 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
   logout: () => void;
-  userInfo: UserInfo | null;
+  userInfo: null;
 }
 
 interface AuthContext extends AuthContextType {}
@@ -27,7 +27,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   // Initialize auth state from localStorage on mount
   useEffect(() => {
@@ -54,29 +53,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     mutationFn: authApi.login,
     onSuccess: (data) => {
       setToken(data.token);
-      const parsedUser = data.role ? {
+      const parsedUser = data ? {
         id: data.userId,
         email: data.email,
         role: data.role,
-        displayName: data.role,
+        displayName: data.full_name || data.role,
       } : null;
 
       setUser(parsedUser);
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('auth_user', JSON.stringify(parsedUser));
     },
-    onError: (error) => {
-      console.error('Login error:', error);
+    onError: () => {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      setToken(null);
+      setUser(null);
     },
   });
 
   const login = async (data: LoginRequest) => {
-    // Use remember me checkbox if checked
-    if (data.rememberMe) {
-      await loginMutation.mutateAsync({ ...data, rememberMe: true });
-    } else {
-      await loginMutation.mutateAsync({ ...data, rememberMe: false });
-    }
+    await loginMutation.mutateAsync(data);
   };
 
   const logout = () => {
@@ -88,14 +85,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     window.location.href = '/';
   };
 
-  // Clear token on error
-  loginMutation.onError = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    setToken(null);
-    setUser(null);
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -105,7 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading,
         login,
         logout,
-        userInfo,
+        userInfo: null,
       }}
     >
       {!isLoading && children}

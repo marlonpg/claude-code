@@ -30,14 +30,14 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             error ? 'border-danger' : ''
           } ${className}`}
           style={{
-            backgroundImage: 'none',
             backgroundImage: `
               linear-gradient(45deg, transparent 50%, rgba(220, 230, 250, 0.5) 50%),
               linear-gradient(-45deg, transparent 50%, rgba(220, 230, 250, 0.5) 50%)
             `,
-            backgroundPosition: 'calc(100% + 0.4em) calc(100% + 0.4em),
-            backgroundSize: '1em 1em, 1em 1em,
+            backgroundPosition: 'calc(100% + 0.4em) calc(100% + 0.4em), calc(100% + 0.4em) calc(100% + 0.4em)',
+            backgroundSize: '1em 1em, 1em 1em',
             backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'local',
           }}
           {...props}
         >
