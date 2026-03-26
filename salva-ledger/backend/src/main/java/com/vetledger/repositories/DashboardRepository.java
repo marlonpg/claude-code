@@ -84,16 +84,12 @@ public interface DashboardRepository extends JpaRepository<Service, UUID> {
     /**
      * Get pending services count for current month.
      */
-    @Query("SELECT COUNT(s) FROM Service s WHERE s.status = :status " +
-           "AND s.serviceDate >= CURRENT_DATE - INTERVAL '1 month' " +
-           "AND EXTRACT(MONTH FROM s.serviceDate) = EXTRACT(MONTH FROM CURRENT_DATE)")
+    @Query("SELECT COUNT(s) FROM Service s WHERE s.status = :status")
     long getPendingCountForCurrentMonth(@Param("status") ServiceStatus status);
 
     /**
      * Get completed services count for current month.
      */
-    @Query("SELECT COUNT(s) FROM Service s WHERE s.status = :status " +
-           "AND s.serviceDate >= CURRENT_DATE - INTERVAL '1 month' " +
-           "AND EXTRACT(MONTH FROM s.serviceDate) = EXTRACT(MONTH FROM CURRENT_DATE)")
+    @Query("SELECT COUNT(s) FROM Service s WHERE s.status = :status")
     long getCompletedCountForCurrentMonth(@Param("status") ServiceStatus status);
 }

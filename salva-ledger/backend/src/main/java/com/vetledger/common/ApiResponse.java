@@ -11,13 +11,6 @@ public class ApiResponse<T> {
 
     public ApiResponse() {}
 
-    public static <T> ApiResponse<T> success(T data) {
-        ApiResponse<T> response = new ApiResponse<>();
-        response.success = true;
-        response.data = data;
-        return response;
-    }
-
     public static <T> ApiResponse<T> error(String message) {
         ApiResponse<T> response = new ApiResponse<>();
         response.success = false;
@@ -87,6 +80,20 @@ public class ApiResponse<T> {
 
     public void setErrorCode(String errorCode) {
         this.errorCode = errorCode;
+    }
+
+    public boolean setErrorMessage(String message) {
+        if (message != null) {
+            this.message = message;
+            return true;
+        }
+        return false;
+    }
+
+    public void setErrorMessageOrNull(String message) {
+        if (message != null) {
+            this.message = message;
+        }
     }
 
     @Override

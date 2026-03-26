@@ -1,14 +1,18 @@
 package com.vetledger.security;
 
+import com.vetledger.entities.Role;
 import com.vetledger.entities.User;
 import com.vetledger.repositories.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -19,6 +23,8 @@ import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
@@ -31,16 +37,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (StringUtils.hasText(jwt) && jwtTokenUtil.isTokenValid(jwt)) {
-                String email = jwtTokenUtil.getEmailFromToken(jwt);
-                if (email != null && !email.isEmpty()) {
-                    User user = userRepository.findByEmail(email)
-                        .orElseThrow(() -> new RuntimeException("User not found"));
+            if (StringUtils.hasText(jwt)) {
+                try {
+                    // Parse claims to verify the token
+                    var claims = jwtTokenUtil.getAllClaims(jwt);
+                    String email = jwtTokenUtil.getEmailFromToken(jwt);
 
-                    UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(user, null, List.of());
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    if (StringUtils.hasText(email) && !email.isEmpty()) {
+                        User user = userRepository.findByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+
+                        // Create authentication with user details
+                        String subject = user.getId().toString();
+                        Role role = user.getRole();
+
+                        UsernamePasswordAuthenticationToken authenticationToken =
+                            new UsernamePasswordAuthenticationToken(subject, null, List.of());
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    }
+                } catch (Exception e) {
+                    // Token invalid, continue chain
+                    logger.debug("Invalid token");
                 }
             }
         } catch (Exception e) {

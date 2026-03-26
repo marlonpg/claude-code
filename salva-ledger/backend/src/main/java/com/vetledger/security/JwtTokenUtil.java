@@ -29,15 +29,13 @@ public class JwtTokenUtil {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
-        Claims claims = Jwts.claims().setSubject(user.getId().toString());
-        claims.put("email", user.getEmail());
-        claims.put("role", user.getRole().name());
-        claims.put("userId", user.getId().toString());
-
         return Jwts.builder()
-            .claims(claims)
-            .issuedAt(now)
-            .expiration(expiryDate)
+            .setSubject(user.getId().toString())
+            .claim("email", user.getEmail())
+            .claim("role", user.getRole().name())
+            .claim("userId", user.getId().toString())
+            .setIssuedAt(now)
+            .setExpiration(expiryDate)
             .signWith(getSigningKey())
             .compact();
     }
@@ -47,15 +45,13 @@ public class JwtTokenUtil {
         // Refresh token expires in 30 days
         Date expiryDate = new Date(now.getTime() + 2592000000L);
 
-        Claims claims = Jwts.claims().setSubject(user.getId().toString());
-        claims.put("email", user.getEmail());
-        claims.put("role", user.getRole().name());
-        claims.put("userId", user.getId().toString());
-
         return Jwts.builder()
-            .claims(claims)
-            .issuedAt(now)
-            .expiration(expiryDate)
+            .setSubject(user.getId().toString())
+            .claim("email", user.getEmail())
+            .claim("role", user.getRole().name())
+            .claim("userId", user.getId().toString())
+            .setIssuedAt(now)
+            .setExpiration(expiryDate)
             .signWith(getSigningKey())
             .compact();
     }

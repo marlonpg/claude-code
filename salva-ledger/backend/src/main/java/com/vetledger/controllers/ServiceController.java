@@ -5,6 +5,7 @@ import com.vetledger.repositories.ServiceRepository;
 import com.vetledger.services.ServiceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -46,26 +47,28 @@ public class ServiceController {
             @RequestParam(required = false) String status) {
 
         // Build query based on filter parameters
+        Sort sort = Sort.by(sortBy).descending();
         Page<Service> services;
 
         if (search != null && !search.isBlank() && status != null) {
             // Both search and status provided
-            Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+            sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : sort;
             Pageable pageable = PageRequest.of(page, size, sort);
             services = serviceRepository.findBySearchAndStatus(search, status, pageable);
         } else if (search != null && !search.isBlank()) {
             // Only search provided
-            Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+            sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : sort;
             Pageable pageable = PageRequest.of(page, size, sort);
             services = serviceRepository.findBySearch(search, pageable);
         } else if (status != null) {
             // Only status provided
-            Sort sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+            sort = sortDir.equalsIgnoreCase("ASC") ? Sort.by(sortBy).ascending() : sort;
             Pageable pageable = PageRequest.of(page, size, sort);
             services = serviceRepository.findByStatus(status, pageable);
         } else {
             // No filters - return all services
-            services = serviceRepository.findAll(Sort.by(sortDir.equalsIgnoreCase("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC, sortBy));
+            Pageable pageableNoFilters = PageRequest.of(page, size, sort);
+            services = serviceRepository.findAll(pageableNoFilters);
         }
 
         return ResponseEntity.ok(services);

@@ -38,7 +38,7 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
         try {
             // Authenticate user
             Authentication authentication = authenticationManager.authenticate(
@@ -60,21 +60,28 @@ public class AuthController {
                 : null;
 
             AuthResponse response = new AuthResponse(token, user.getEmail(), user.getRole(), user.getId().toString());
-            response.setToken(token);
 
             if (refreshToken != null) {
-                response.setToken(refreshToken);
                 Map<String, String> tokenInfo = new HashMap<>();
                 tokenInfo.put("token", refreshToken);
                 tokenInfo.put("type", "Bearer");
-                return ResponseEntity.ok(ApiResponse.success(tokenInfo));
+                ApiResponse<Map<String, String>> responseWithToken = new ApiResponse<Map<String, String>>();
+                responseWithToken.setSuccess(true);
+                responseWithToken.setData(tokenInfo);
+                return ResponseEntity.ok(responseWithToken);
             }
 
-            return ResponseEntity.ok(ApiResponse.success(response));
+            ApiResponse<AuthResponse> responseObj = new ApiResponse<>();
+            responseObj.setSuccess(true);
+            responseObj.setData(response);
+            return ResponseEntity.ok(responseObj);
 
         } catch (Exception e) {
-            return ResponseEntity.status(401)
-                .body(ApiResponse.error("INVALID_CREDENTIALS", "Invalid email or password"));
+            ApiResponse<String> errorResponse = new ApiResponse<>();
+            errorResponse.setSuccess(false);
+            errorResponse.setErrorCode("INVALID_CREDENTIALS");
+            errorResponse.setMessage("Invalid email or password");
+            return ResponseEntity.status(401).body(errorResponse);
         }
     }
 
@@ -107,7 +114,10 @@ public class AuthController {
             responseMap.put("userId", user.getId().toString());
             responseMap.put("role", user.getRole().name());
 
-            return ResponseEntity.ok(ApiResponse.success(responseMap));
+            ApiResponse<Map<String, String>> responseMapObj = new ApiResponse<Map<String, String>>();
+            responseMapObj.setSuccess(true);
+            responseMapObj.setData(responseMap);
+            return ResponseEntity.ok(responseMapObj);
 
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -116,12 +126,12 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<User>> getLoggedInUser() {
+    public ResponseEntity<Map<String, Object>> getLoggedInUser() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
-                return ResponseEntity.ok(ApiResponse.error("NOT_AUTHENTICATED", "Not authenticated"));
+                return ResponseEntity.ok(Map.of("error", "NOT_AUTHENTICATED", "message", "Not authenticated"));
             }
 
             User user = (User) authentication.getPrincipal();
@@ -135,10 +145,10 @@ public class AuthController {
             userMap.put("displayName", user.getFullName() != null ? user.getFullName() : user.getEmail());
             userMap.put("userId", user.getId().toString()); // for backward compatibility
 
-            return ResponseEntity.ok(ApiResponse.success(userMap));
+            return ResponseEntity.ok(userMap);
 
         } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponse.error("NOT_AUTHENTICATED", "Not authenticated"));
+            return ResponseEntity.ok(Map.of("error", "NOT_AUTHENTICATED", "message", "Not authenticated"));
         }
     }
 
@@ -146,7 +156,10 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Map<String, String>>> refreshToken() {
         // This endpoint would require the current JWT token to be passed in the Authorization header
         // The implementation would decode the token, validate it, and issue a new one
-        return ResponseEntity.ok(ApiResponse.error("NOT_IMPLEMENTED", "Refresh token endpoint - pass token in Authorization header"));
+        ApiResponse<Map<String, String>> refreshTokenResponse = new ApiResponse<Map<String, String>>();
+        refreshTokenResponse.setSuccess(false);
+        refreshTokenResponse.setMessage("Refresh token endpoint - pass token in Authorization header");
+        return ResponseEntity.ok(refreshTokenResponse);
     }
 
     @PostMapping("/logout")
@@ -155,7 +168,10 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Logged out successfully");
         response.put("token", "deleted-client-side");
-        return ResponseEntity.ok(ApiResponse.success(response));
+        ApiResponse<Map<String, String>> logoutResponse = new ApiResponse<Map<String, String>>();
+        logoutResponse.setSuccess(true);
+        logoutResponse.setData(response);
+        return ResponseEntity.ok(logoutResponse);
     }
 
     @GetMapping("/admin-users")
@@ -180,11 +196,18 @@ public class AuthController {
             response.put("users", adminUsers);
             response.put("total", adminUsers.size());
 
-            return ResponseEntity.ok(ApiResponse.success(response));
+            ApiResponse<Map<String, Object>> adminUsersResponse = new ApiResponse<Map<String, Object>>();
+            adminUsersResponse.setSuccess(true);
+            adminUsersResponse.setData(response);
+            return ResponseEntity.ok(adminUsersResponse);
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                .body(ApiResponse.error("INTERNAL_ERROR", "Error fetching users"));
+            ApiResponse<Map<String, Object>> errorResponse = new ApiResponse<Map<String, Object>>();
+            errorResponse.setSuccess(false);
+            errorResponse.setMessage("INTERNAL_ERROR");
+            Map<String, Object> errorData = Map.of("error", "NOT_AUTHENTICATED", "message", "Not authenticated");
+            errorResponse.setData(errorData);
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
@@ -209,7 +232,10 @@ public class AuthController {
             response.put("role", role);
             response.put("message", "User role updated successfully");
 
-            return ResponseEntity.ok(ApiResponse.success(response));
+            ApiResponse<Map<String, String>> roleResponse = new ApiResponse<Map<String, String>>();
+            roleResponse.setSuccess(true);
+            roleResponse.setData(response);
+            return ResponseEntity.ok(roleResponse);
 
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -232,7 +258,10 @@ public class AuthController {
             response.put("active", String.valueOf(user.getActive()));
             response.put("message", user.getActive() ? "User activated" : "User deactivated");
 
-            return ResponseEntity.ok(ApiResponse.success(response));
+            ApiResponse<Map<String, String>> statusResponse = new ApiResponse<Map<String, String>>();
+            statusResponse.setSuccess(true);
+            statusResponse.setData(response);
+            return ResponseEntity.ok(statusResponse);
 
         } catch (Exception e) {
             return ResponseEntity.badRequest()

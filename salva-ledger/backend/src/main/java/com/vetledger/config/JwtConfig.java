@@ -65,7 +65,7 @@ public class JwtConfig {
                     response.sendError(401, "Unauthorized")
                 )
             )
-            .apply(new JwtAuthenticationFilter());
+            .addFilterBefore(new com.vetledger.security.JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
